@@ -21,7 +21,9 @@ Download from [Releases](https://github.com/nyabi021/FaceVeil/releases/latest):
 3. Choose an output folder
 4. Click **Start**
 
-Originals are never modified. Enable **Review each image** to inspect detections before saving, exclude false positives, add missed faces, or skip individual images.
+Originals are never modified. Enable **Review each image** to inspect detections before saving, exclude false positives, add missed faces, leave an image unsaved, or explicitly copy the original.
+
+FaceVeil refuses to start if two inputs would write to the same output path, so existing results are not silently overwritten.
 
 Supported inputs: `.jpg` `.jpeg` `.png` `.bmp` `.tif` `.tiff` `.webp`.
 
@@ -35,6 +37,8 @@ Put SCRFD models in `models/` before running the app, for example:
 - `models/10g_bnkps.onnx` — Accurate
 
 Model files are not committed to this repository. You can also launch the app and use **Browse…** to select a custom SCRFD `.onnx` file.
+
+Only load custom ONNX models from sources you trust. FaceVeil checks basic SCRFD tensor compatibility before processing, but ONNX files are still executable model inputs handled by native runtime libraries.
 
 ### macOS
 
@@ -58,6 +62,14 @@ cmake -S . -B build-windows -G Ninja `
   -DCMAKE_PREFIX_PATH="C:\Qt\6.11.0\msvc2022_64;C:\opencv\build" `
   -DONNXRUNTIME_ROOT="C:\onnxruntime-win-x64-1.24.4"
 cmake --build build-windows --config Release
+```
+
+### Tests
+
+```bash
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
 Packaging scripts: [`scripts/package_macos.sh`](scripts/package_macos.sh), [`scripts/package_windows.ps1`](scripts/package_windows.ps1), [`scripts/notarize_macos.sh`](scripts/notarize_macos.sh).
