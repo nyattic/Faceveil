@@ -91,7 +91,7 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe" -OutFile opencv.exe
           Start-Process -FilePath .\opencv.exe -ArgumentList '-o"C:\opencv" -y' -Wait
-          "OpenCV_DIR=C:\opencv\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "OpenCV_DIR=C:\opencv\opencv\build\x64\vc16\lib" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Install ONNX Runtime
         shell: pwsh
