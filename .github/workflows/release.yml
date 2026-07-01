@@ -14,9 +14,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  MODEL_BASE_URL: https://huggingface.co/RuteNL/SCRFD-face-detection-ONNX/resolve/main
-  MODEL_10G_SHA256: 5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91
-  MODEL_25G_SHA256: 3f1ac54e769cb5fd76eda11ac3c088eed78d1f51a935a839d04d49b0e770219e
   OPENCV_SHA256: bff38466091c313dac21a0b73eea8278316a89c1d434c6f0b10697e087670168
   ONNXRUNTIME_SHA256: 78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
 
@@ -33,14 +30,6 @@ jobs:
 
       - name: Install dependencies
         run: brew install cmake qt opencv onnxruntime spdlog
-
-      - name: Download and verify SCRFD models
-        run: |
-          mkdir -p models
-          curl -fL -o models/10g_bnkps.onnx  "$MODEL_BASE_URL/10g_bnkps.onnx"
-          curl -fL -o models/2.5g_bnkps.onnx "$MODEL_BASE_URL/2.5g_bnkps.onnx"
-          echo "$MODEL_10G_SHA256  models/10g_bnkps.onnx"  | shasum -a 256 -c -
-          echo "$MODEL_25G_SHA256  models/2.5g_bnkps.onnx" | shasum -a 256 -c -
 
       - name: Import signing certificate
         uses: apple-actions/import-codesign-certs@fe74d46e82474f87e1ba79832ad28a4013d0e33a # v6
@@ -114,15 +103,6 @@ jobs:
         shell: pwsh
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install "spdlog:x64-windows-static-md"
-
-      - name: Download and verify SCRFD models
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path models | Out-Null
-          Invoke-WebRequest -Uri "$env:MODEL_BASE_URL/10g_bnkps.onnx"  -OutFile models/10g_bnkps.onnx
-          Invoke-WebRequest -Uri "$env:MODEL_BASE_URL/2.5g_bnkps.onnx" -OutFile models/2.5g_bnkps.onnx
-          if ((Get-FileHash -Algorithm SHA256 models/10g_bnkps.onnx).Hash.ToLower()  -ne "$env:MODEL_10G_SHA256") { throw "10g model SHA256 mismatch" }
-          if ((Get-FileHash -Algorithm SHA256 models/2.5g_bnkps.onnx).Hash.ToLower() -ne "$env:MODEL_25G_SHA256") { throw "2.5g model SHA256 mismatch" }
 
       - name: Build & package
         shell: pwsh

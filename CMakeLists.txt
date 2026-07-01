@@ -10,7 +10,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 find_package(OpenCV REQUIRED COMPONENTS core imgcodecs imgproc)
 find_package(spdlog REQUIRED)
 include(CTest)
@@ -86,6 +86,7 @@ target_include_directories(FaceVeil PRIVATE include)
 target_compile_definitions(FaceVeil PRIVATE FACEVEIL_VERSION="${PROJECT_VERSION}")
 target_link_libraries(FaceVeil PRIVATE
     Qt6::Widgets
+    Qt6::Network
     ${OpenCV_LIBS}
     onnxruntime::onnxruntime
     spdlog::spdlog

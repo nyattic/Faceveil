@@ -5,7 +5,7 @@
 ![Last Commit](https://img.shields.io/github/last-commit/nyattic/FaceVeil?style=flat&color=f59e0b)
 ![License](https://img.shields.io/badge/app%20code-PolyForm%20Noncommercial%201.0.0-8b5cf6?style=flat)
 
-Local desktop app that automatically mosaics faces in your photos. Drop in images or folders, pick a model, get anonymized copies — nothing ever leaves your machine.
+Local desktop app that automatically mosaics faces in your photos. Drop in images or folders, pick a model, get anonymized copies — your photos are processed entirely on your machine and never uploaded.
 
 ## Install
 
@@ -13,6 +13,8 @@ Download from [Releases](https://github.com/nyattic/FaceVeil/releases/latest):
 
 - **macOS** (Apple Silicon, macOS 15+) — open the `.dmg`, drag to Applications
 - **Windows** (x64, Windows 10+) — unzip, run `FaceVeil.exe`
+
+The first time you use a built-in model, FaceVeil downloads it once (3–17 MB) from Hugging Face and caches it; after that it runs offline.
 
 ## Use
 
@@ -31,12 +33,12 @@ Supported inputs: `.jpg` `.jpeg` `.png` `.bmp` `.tif` `.tiff` `.webp`.
 
 Requires CMake 3.24+, a C++20 compiler, Qt 6 available to CMake, OpenCV 4, ONNX Runtime, spdlog, and SCRFD ONNX model files.
 
-Put SCRFD models in `models/` before running the app, for example:
+The built-in models are **not bundled** and **not committed** to this repository. The app downloads them on first use (with an integrity check) and caches them under the platform data directory. To pre-place them for offline use, drop them in `models/`:
 
 - `models/2.5g_bnkps.onnx` — Fast
 - `models/10g_bnkps.onnx` — Accurate
 
-Model files are not committed to this repository — download `2.5g_bnkps.onnx` and `10g_bnkps.onnx` from [RuteNL/SCRFD-face-detection-ONNX](https://huggingface.co/RuteNL/SCRFD-face-detection-ONNX) on Hugging Face. You can also launch the app and use **Browse…** to select a custom SCRFD `.onnx` file.
+You can also launch the app and use **Browse…** to select a custom SCRFD `.onnx` file.
 
 Only load custom ONNX models from sources you trust. FaceVeil checks basic SCRFD tensor compatibility before processing, but ONNX files are still executable model inputs handled by native runtime libraries.
 
@@ -78,7 +80,7 @@ Packaging scripts: [`scripts/package_macos.sh`](scripts/package_macos.sh), [`scr
 
 ## Privacy
 
-No network calls. Images are read from disk, processed locally, and written to the output folder you pick.
+Your images never leave your device — they are read from disk, processed locally, and written to the output folder you pick. The only network request FaceVeil ever makes is a one-time download of the face-detection model (from Hugging Face) the first time you use a built-in model. Supply your own model with **Browse…** and it makes no network calls at all.
 
 ## License
 
@@ -86,7 +88,7 @@ No network calls. Images are read from disk, processed locally, and written to t
 
 Copyright © 2026 Nyabi.
 
-**Bundled SCRFD models** — provided by [InsightFace](https://github.com/deepinsight/insightface) for **non-commercial research use only**, under their own terms separate from the application license. See the [InsightFace Model Zoo](https://github.com/deepinsight/insightface/blob/master/model_zoo/README.md) for details.
+**SCRFD models** — the built-in models are **not distributed with FaceVeil**; the app downloads them on first use directly from their source. They originate from [InsightFace](https://github.com/deepinsight/insightface) and are available for **non-commercial research use only**, under their own terms separate from the application license. See the [InsightFace Model Zoo](https://github.com/deepinsight/insightface/blob/master/model_zoo/README.md) for details.
 
 **Third-party runtime dependencies** — Qt (LGPL-3.0 / GPL-3.0 / commercial), OpenCV (Apache-2.0), ONNX Runtime (MIT), spdlog (MIT). Each retains its own license.
 

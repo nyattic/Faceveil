@@ -153,9 +153,6 @@ while IFS= read -r dylib; do
   rewrite_rpath_dependencies_for "$dylib"
 done < <(find "$FRAMEWORKS_DIR" -type f -name '*.dylib')
 
-mkdir -p "$DIST_APP/Contents/Resources/models"
-find "$ROOT_DIR/models" -maxdepth 1 -type f -name '*.onnx' -exec cp {} "$DIST_APP/Contents/Resources/models/" \;
-
 # ── Sign ───────────────────────────────────────────────────────────
 SIGN_FLAGS=(--force --timestamp --options runtime)
 if [[ "$DISTRIBUTABLE" == "1" ]]; then

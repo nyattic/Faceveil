@@ -156,19 +156,6 @@ if ($worldDlls) {
     Write-Host "Bundled $(@($moduleDlls).Count) OpenCV module DLL(s)."
 }
 
-# ── Models ─────────────────────────────────────────────────────────
-$modelsSrcDir = Join-Path $RootDir "models"
-$modelFiles = Get-ChildItem -Path $modelsSrcDir -Filter "*.onnx" -ErrorAction SilentlyContinue
-if (-not $modelFiles -or $modelFiles.Count -eq 0) {
-    throw "No ONNX model files found in $modelsSrcDir. Place SCRFD models there before packaging."
-}
-$modelsDir = Join-Path $DistDir "models"
-New-Item -ItemType Directory -Path $modelsDir | Out-Null
-foreach ($file in $modelFiles) {
-    Copy-Item $file.FullName $modelsDir -Force
-}
-Write-Host "Bundled $($modelFiles.Count) model(s)."
-
 Write-Host ""
 Write-Host "✅ Packaged app: $DistDir"
 Write-Host "   Run with:     $DistDir\FaceVeil.exe"

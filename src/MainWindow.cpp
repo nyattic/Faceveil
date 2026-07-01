@@ -30,6 +30,15 @@
 #include <QUrl>
 #include <QWidget>
 
+#include <QCryptographicHash>
+#include <QDir>
+#include <QEventLoop>
+#include <QFile>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QProgressDialog>
+
 #include <spdlog/spdlog.h>
 
 #include <array>
@@ -243,10 +252,18 @@ namespace faceveil
             return QDir::homePath() + "/FaceVeil";
         }
 
+        QString modelCacheDir()
+        {
+            const auto base = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+            const auto root = base.isEmpty() ? QDir::homePath() : base;
+            return root + "/FaceVeil/models";
+        }
+
         QString firstExistingModelPath(const QString &fileName)
         {
             const auto appDir = QCoreApplication::applicationDirPath();
-            const std::array<QString, 4> candidates = {
+            const std::array<QString, 5> candidates = {
+                modelCacheDir() + "/" + fileName,
                 appDir + "/models/" + fileName,
                 appDir + "/../Resources/models/" + fileName,
                 appDir + "/../../../../models/" + fileName,
@@ -263,6 +280,134 @@ namespace faceveil
             }
 
             return {};
+        }
+
+        struct BuiltinModel
+        {
+            QString label;
+            QString fileName;
+            QString url;
+            QString sha256;
+            qint64 approxBytes;
+        };
+
+        const std::array<BuiltinModel, 2> &builtinModels()
+        {
+            static const std::array<BuiltinModel, 2> models = {
+                BuiltinModel{
+                    "Fast  ·  SCRFD 2.5G", "2.5g_bnkps.onnx",
+                    "https://huggingface.co/RuteNL/SCRFD-face-detection-ONNX/resolve/main/2.5g_bnkps.onnx",
+                    "3f1ac54e769cb5fd76eda11ac3c088eed78d1f51a935a839d04d49b0e770219e", 3291737},
+                BuiltinModel{
+                    "Accurate  ·  SCRFD 10G", "10g_bnkps.onnx",
+                    "https://huggingface.co/RuteNL/SCRFD-face-detection-ONNX/resolve/main/10g_bnkps.onnx",
+                    "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91", 16923827},
+            };
+            return models;
+        }
+
+        const BuiltinModel *findBuiltinModel(const QString &path)
+        {
+            const auto name = QFileInfo(path).fileName();
+            for (const auto &model: builtinModels())
+            {
+                if (model.fileName == name)
+                {
+                    return &model;
+                }
+            }
+            return nullptr;
+        }
+
+        bool downloadModelWithProgress(QWidget *parent, const BuiltinModel &model, const QString &destPath)
+        {
+            QNetworkAccessManager manager;
+            QNetworkRequest request{QUrl(model.url)};
+            request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                                 QNetworkRequest::NoLessSafeRedirectPolicy);
+
+            QProgressDialog progress("Downloading model…", "Cancel", 0, 0, parent);
+            progress.setWindowModality(Qt::WindowModal);
+            progress.setMinimumDuration(0);
+            progress.setAutoClose(false);
+            progress.setAutoReset(false);
+
+            QNetworkReply *reply = manager.get(request);
+
+            QObject::connect(reply, &QNetworkReply::downloadProgress, &progress,
+                             [&progress](qint64 received, qint64 total)
+                             {
+                                 if (total > 0)
+                                 {
+                                     progress.setMaximum(100);
+                                     progress.setValue(static_cast<int>(received * 100 / total));
+                                 }
+                             });
+
+            QEventLoop loop;
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&progress, &QProgressDialog::canceled, reply, &QNetworkReply::abort);
+            loop.exec();
+            progress.close();
+
+            if (reply->error() != QNetworkReply::NoError)
+            {
+                if (reply->error() != QNetworkReply::OperationCanceledError)
+                {
+                    QMessageBox::warning(parent, "Download Failed",
+                                         QString("Could not download the model.\n\n%1").arg(reply->errorString()));
+                }
+                return false;
+            }
+
+            const QByteArray data = reply->readAll();
+            const auto actual = QString::fromLatin1(
+                QCryptographicHash::hash(data, QCryptographicHash::Sha256).toHex());
+            if (actual.compare(model.sha256, Qt::CaseInsensitive) != 0)
+            {
+                QMessageBox::warning(parent, "Download Failed",
+                                     "The downloaded model failed its integrity check and was discarded.");
+                return false;
+            }
+
+            QDir().mkpath(QFileInfo(destPath).absolutePath());
+            const QString tempPath = destPath + ".part";
+            QFile file(tempPath);
+            if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size())
+            {
+                file.remove();
+                QMessageBox::warning(parent, "Download Failed", "Could not save the model file.");
+                return false;
+            }
+            file.close();
+            QFile::remove(destPath);
+            if (!QFile::rename(tempPath, destPath))
+            {
+                QFile::remove(tempPath);
+                QMessageBox::warning(parent, "Download Failed", "Could not save the model file.");
+                return false;
+            }
+            return true;
+        }
+
+        bool ensureBuiltinModelAvailable(QWidget *parent, const BuiltinModel &model, const QString &destPath)
+        {
+            const auto sizeMb = QString::number(model.approxBytes / 1024.0 / 1024.0, 'f', 1);
+            const auto answer = QMessageBox::question(
+                parent,
+                "Download Model",
+                QString("The %1 model isn't on this computer yet.\n\n"
+                        "FaceVeil can download it once (%2 MB) from Hugging Face. "
+                        "The model is provided by InsightFace for non-commercial use. "
+                        "Your images are never uploaded.\n\nDownload now?")
+                    .arg(model.fileName, sizeMb),
+                QMessageBox::Yes | QMessageBox::No,
+                QMessageBox::Yes);
+            if (answer != QMessageBox::Yes)
+            {
+                return false;
+            }
+            return downloadModelWithProgress(parent, model, destPath);
         }
 
         QLabel *makeSectionTitle(const QString &text, QWidget *parent)
@@ -772,13 +917,34 @@ namespace faceveil
     void MainWindow::startProcessing()
     {
         const auto modelPath = selectedModelPath();
-        if (modelPath.isEmpty() || !QFileInfo::exists(modelPath))
+        const auto currentLabel = modelCombo_ ? modelCombo_->currentText() : QString();
+        const bool isCustom = currentLabel.startsWith("Custom");
+
+        if (modelPath.isEmpty())
         {
-            appendLog("Choose a valid SCRFD ONNX model first.");
+            appendLog("Choose a SCRFD ONNX model first.");
             return;
         }
-        const auto currentLabel = modelCombo_ ? modelCombo_->currentText() : QString();
-        if (currentLabel.startsWith("Custom") && !customModelFileIsAllowed(this, modelPath))
+
+        if (!QFileInfo::exists(modelPath))
+        {
+            const BuiltinModel *builtin = isCustom ? nullptr : findBuiltinModel(modelPath);
+            if (builtin == nullptr)
+            {
+                appendLog("Choose a valid SCRFD ONNX model first.");
+                return;
+            }
+            appendLog(QString("Downloading %1…").arg(builtin->fileName));
+            if (!ensureBuiltinModelAvailable(this, *builtin, modelPath))
+            {
+                appendLog("Model download was cancelled or failed.");
+                return;
+            }
+            updateModelPathFromSelection();
+            appendLog(QString("Model ready: %1").arg(builtin->fileName));
+        }
+
+        if (isCustom && !customModelFileIsAllowed(this, modelPath))
         {
             return;
         }
@@ -1070,35 +1236,28 @@ namespace faceveil
 
     void MainWindow::populateBundledModels() const
     {
-        struct ModelOption
+        for (const auto &model: builtinModels())
         {
-            QString label;
-            QString fileName;
-        };
-
-        const std::array<ModelOption, 2> options = {
-            ModelOption{"Fast  ·  SCRFD 2.5G", "2.5g_bnkps.onnx"},
-            ModelOption{"Accurate  ·  SCRFD 10G", "10g_bnkps.onnx"},
-        };
-
-        for (const auto &option: options)
-        {
-            const auto path = firstExistingModelPath(option.fileName);
-            modelCombo_->addItem(option.label, path);
+            const auto existing = firstExistingModelPath(model.fileName);
+            const auto path = existing.isEmpty() ? modelCacheDir() + "/" + model.fileName : existing;
+            modelCombo_->addItem(model.label, path);
         }
 
         modelCombo_->setCurrentIndex(0);
         updateModelPathFromSelection();
-
-        if (selectedModelPath().isEmpty())
-        {
-            appendLog("Bundled models not found. Use Browse… to select an ONNX file.");
-        }
     }
 
     void MainWindow::updateModelPathFromSelection() const
     {
-        modelPathEdit_->setText(selectedModelPath());
+        const auto path = selectedModelPath();
+        if (path.isEmpty() || QFileInfo::exists(path))
+        {
+            modelPathEdit_->setText(path);
+        }
+        else
+        {
+            modelPathEdit_->setText("Not downloaded yet — fetched when you press Start");
+        }
     }
 
     QString MainWindow::selectedModelPath() const
