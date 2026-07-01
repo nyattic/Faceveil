@@ -253,7 +253,7 @@ namespace faceveil
 
         constexpr double kDefaultScoreThreshold = 0.5;
         constexpr double kDefaultNmsThreshold = 0.4;
-        constexpr int kDefaultBlockSize = 28;
+        constexpr int kDefaultBlockSize = 14;
         constexpr double kDefaultPadding = 0.18;
         constexpr qint64 kMaxCustomModelBytes = 512LL * 1024LL * 1024LL;
 
@@ -863,7 +863,7 @@ namespace faceveil
                                  blockSizeSpin_->setToolTip(tr(
                                      "Mosaic block size in pixels.\n"
                                      "Larger = coarser blocks, harder to un-blur.\n"
-                                     "Smaller = finer mosaic, higher recovery risk. Default: 28"));
+                                     "Smaller = finer mosaic, higher recovery risk. Default: 14"));
                              });
 
             paddingSpin_ = new QDoubleSpinBox(advancedBody_);

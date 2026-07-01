@@ -274,10 +274,10 @@ Higher = allows more overlap. Default: 0.40</source>
         <location filename="../src/MainWindow.cpp" line="776"/>
         <source>Mosaic block size in pixels.
 Larger = coarser blocks, harder to un-blur.
-Smaller = finer mosaic, higher recovery risk. Default: 28</source>
+Smaller = finer mosaic, higher recovery risk. Default: 14</source>
         <translation>모자이크 블록 크기(픽셀)입니다.
 클수록 = 블록이 거칠어 복원이 어렵습니다.
-작을수록 = 모자이크가 세밀해 복원 위험이 높습니다. 기본값: 28</translation>
+작을수록 = 모자이크가 세밀해 복원 위험이 높습니다. 기본값: 14</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="789"/>
