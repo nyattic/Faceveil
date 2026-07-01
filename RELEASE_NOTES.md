@@ -19,7 +19,7 @@ The first 1.0 release. FaceVeil is now licensed for noncommercial use, works wit
 
 ## Download
 
-- **macOS (Apple Silicon)** — `FaceVeil-1.0.0-arm64.dmg`, signed and notarized. Requires macOS 12+.
+- **macOS (Apple Silicon)** — `FaceVeil-1.0.0-arm64.dmg`, signed and notarized. Requires macOS 15+.
 - **Windows (x64)** — `FaceVeil-1.0.0-windows-x64.zip`. Unzip and run `FaceVeil.exe`. Requires Windows 10 or later.
 
 ---

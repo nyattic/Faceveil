@@ -11,7 +11,7 @@ Local desktop app that automatically mosaics faces in your photos. Drop in image
 
 Download from [Releases](https://github.com/nyattic/FaceVeil/releases/latest):
 
-- **macOS** (Apple Silicon, macOS 12+) — open the `.dmg`, drag to Applications
+- **macOS** (Apple Silicon, macOS 15+) — open the `.dmg`, drag to Applications
 - **Windows** (x64, Windows 10+) — unzip, run `FaceVeil.exe`
 
 ## Use
@@ -36,7 +36,7 @@ Put SCRFD models in `models/` before running the app, for example:
 - `models/2.5g_bnkps.onnx` — Fast
 - `models/10g_bnkps.onnx` — Accurate
 
-Model files are not committed to this repository. You can also launch the app and use **Browse…** to select a custom SCRFD `.onnx` file.
+Model files are not committed to this repository — download `2.5g_bnkps.onnx` and `10g_bnkps.onnx` from [RuteNL/SCRFD-face-detection-ONNX](https://huggingface.co/RuteNL/SCRFD-face-detection-ONNX) on Hugging Face. You can also launch the app and use **Browse…** to select a custom SCRFD `.onnx` file.
 
 Only load custom ONNX models from sources you trust. FaceVeil checks basic SCRFD tensor compatibility before processing, but ONNX files are still executable model inputs handled by native runtime libraries.
 
