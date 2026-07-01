@@ -43,7 +43,7 @@ jobs:
           echo "$MODEL_25G_SHA256  models/2.5g_bnkps.onnx" | shasum -a 256 -c -
 
       - name: Import signing certificate
-        uses: apple-actions/import-codesign-certs@95e84a1a18f2bdbc5c6ab9b7f4429372e4b13a8b # v5
+        uses: apple-actions/import-codesign-certs@fe74d46e82474f87e1ba79832ad28a4013d0e33a # v6
         with:
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
           p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -68,7 +68,7 @@ jobs:
           mkdir -p artifacts
           cp "$(ls dist/macos/*.dmg | head -n1)" artifacts/
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: macos-dmg
           path: artifacts/*.dmg
@@ -141,7 +141,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
           Compress-Archive -Path dist/windows/FaceVeil/* -DestinationPath "artifacts/FaceVeil-$ver-windows-x64.zip" -Force
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-zip
           path: artifacts/*.zip
@@ -168,12 +168,12 @@ jobs:
             echo "FaceVeil $VERSION" > body.md
           fi
 
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+      - uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
         with:
           body_path: body.md
           files: artifacts/**/*
