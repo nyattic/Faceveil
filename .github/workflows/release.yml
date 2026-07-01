@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -15,6 +15,10 @@ concurrency:
 
 env:
   MODEL_BASE_URL: https://huggingface.co/RuteNL/SCRFD-face-detection-ONNX/resolve/main
+  MODEL_10G_SHA256: 5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91
+  MODEL_25G_SHA256: 3f1ac54e769cb5fd76eda11ac3c088eed78d1f51a935a839d04d49b0e770219e
+  OPENCV_SHA256: bff38466091c313dac21a0b73eea8278316a89c1d434c6f0b10697e087670168
+  ONNXRUNTIME_SHA256: 78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
 
 jobs:
   macos:
@@ -23,20 +27,23 @@ jobs:
     env:
       CMAKE_PREFIX_PATH: /opt/homebrew
       PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Install dependencies
         run: brew install cmake qt opencv onnxruntime spdlog
 
-      - name: Download SCRFD models
+      - name: Download and verify SCRFD models
         run: |
           mkdir -p models
           curl -fL -o models/10g_bnkps.onnx  "$MODEL_BASE_URL/10g_bnkps.onnx"
           curl -fL -o models/2.5g_bnkps.onnx "$MODEL_BASE_URL/2.5g_bnkps.onnx"
+          echo "$MODEL_10G_SHA256  models/10g_bnkps.onnx"  | shasum -a 256 -c -
+          echo "$MODEL_25G_SHA256  models/2.5g_bnkps.onnx" | shasum -a 256 -c -
 
       - name: Import signing certificate
-        uses: apple-actions/import-codesign-certs@v3
+        uses: apple-actions/import-codesign-certs@95e84a1a18f2bdbc5c6ab9b7f4429372e4b13a8b # v5
         with:
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
           p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -59,10 +66,9 @@ jobs:
       - name: Stage artifact
         run: |
           mkdir -p artifacts
-          DMG=$(ls dist/macos/*.dmg | head -n1)
-          cp "$DMG" "artifacts/FaceVeil-${GITHUB_REF_NAME}-macos-arm64.dmg"
+          cp "$(ls dist/macos/*.dmg | head -n1)" artifacts/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: macos-dmg
           path: artifacts/*.dmg
@@ -71,10 +77,10 @@ jobs:
     name: Build Windows zip
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4
         with:
           version: '6.8.1'
           host: windows
@@ -82,7 +88,7 @@ jobs:
           arch: win64_msvc2022_64
 
       - name: Set up MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
         with:
           arch: amd64
 
@@ -90,6 +96,8 @@ jobs:
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe" -OutFile opencv.exe
+          $h = (Get-FileHash -Algorithm SHA256 opencv.exe).Hash.ToLower()
+          if ($h -ne "$env:OPENCV_SHA256") { throw "OpenCV SHA256 mismatch: got $h" }
           Start-Process -FilePath .\opencv.exe -ArgumentList '-o"C:\opencv" -y' -Wait
           "OpenCV_DIR=C:\opencv\opencv\build\x64\vc16\lib" | Out-File -FilePath $env:GITHUB_ENV -Append
 
@@ -97,6 +105,8 @@ jobs:
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-1.20.1.zip" -OutFile onnx.zip
+          $h = (Get-FileHash -Algorithm SHA256 onnx.zip).Hash.ToLower()
+          if ($h -ne "$env:ONNXRUNTIME_SHA256") { throw "ONNX Runtime SHA256 mismatch: got $h" }
           Expand-Archive -Path onnx.zip -DestinationPath C:\onnx -Force
           "ONNXRUNTIME_ROOT=C:\onnx\onnxruntime-win-x64-1.20.1" | Out-File -FilePath $env:GITHUB_ENV -Append
 
@@ -105,12 +115,14 @@ jobs:
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install "spdlog:x64-windows-static-md"
 
-      - name: Download SCRFD models
+      - name: Download and verify SCRFD models
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path models | Out-Null
           Invoke-WebRequest -Uri "$env:MODEL_BASE_URL/10g_bnkps.onnx"  -OutFile models/10g_bnkps.onnx
           Invoke-WebRequest -Uri "$env:MODEL_BASE_URL/2.5g_bnkps.onnx" -OutFile models/2.5g_bnkps.onnx
+          if ((Get-FileHash -Algorithm SHA256 models/10g_bnkps.onnx).Hash.ToLower()  -ne "$env:MODEL_10G_SHA256") { throw "10g model SHA256 mismatch" }
+          if ((Get-FileHash -Algorithm SHA256 models/2.5g_bnkps.onnx).Hash.ToLower() -ne "$env:MODEL_25G_SHA256") { throw "2.5g model SHA256 mismatch" }
 
       - name: Build & package
         shell: pwsh
@@ -125,11 +137,11 @@ jobs:
       - name: Stage artifact
         shell: pwsh
         run: |
+          $ver = ([regex]'VERSION ([0-9]+\.[0-9]+\.[0-9]+)').Match((Get-Content CMakeLists.txt -Raw)).Groups[1].Value
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
-          $zip = "artifacts/FaceVeil-$env:GITHUB_REF_NAME-windows-x64.zip"
-          Compress-Archive -Path dist/windows/FaceVeil/* -DestinationPath $zip -Force
+          Compress-Archive -Path dist/windows/FaceVeil/* -DestinationPath "artifacts/FaceVeil-$ver-windows-x64.zip" -Force
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: windows-zip
           path: artifacts/*.zip
@@ -139,8 +151,10 @@ jobs:
     needs: [macos, windows]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Extract release notes for this version
         run: |
@@ -154,12 +168,12 @@ jobs:
             echo "FaceVeil $VERSION" > body.md
           fi
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           body_path: body.md
           files: artifacts/**/*
