@@ -1,12 +1,12 @@
-#include "faceveil/ProcessorWorker.hpp"
+#include "redactly/ProcessorWorker.hpp"
 
-#include "faceveil/ImageIo.hpp"
-#include "faceveil/ImageScanner.hpp"
-#include "faceveil/PathUtil.hpp"
-#include "faceveil/PlateDetector.hpp"
-#include "faceveil/Mosaic.hpp"
-#include "faceveil/ReviewTypes.hpp"
-#include "faceveil/ScrfdFaceDetector.hpp"
+#include "redactly/ImageIo.hpp"
+#include "redactly/ImageScanner.hpp"
+#include "redactly/PathUtil.hpp"
+#include "redactly/PlateDetector.hpp"
+#include "redactly/Mosaic.hpp"
+#include "redactly/ReviewTypes.hpp"
+#include "redactly/ScrfdFaceDetector.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -26,7 +26,7 @@
 #include <system_error>
 #include <unordered_map>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {
@@ -50,7 +50,7 @@ namespace faceveil
             const QSize size = reader.size();
             if (!size.isValid() || size.width() <= 0 || size.height() <= 0)
             {
-                return {false, QCoreApplication::translate("faceveil::ProcessorWorker", "cannot inspect image dimensions"), {}};
+                return {false, QCoreApplication::translate("redactly::ProcessorWorker", "cannot inspect image dimensions"), {}};
             }
 
             const long long pixelCount =
@@ -59,7 +59,7 @@ namespace faceveil
             {
                 return {
                     false,
-                    QCoreApplication::translate("faceveil::ProcessorWorker", "image too large, %1 x %2")
+                    QCoreApplication::translate("redactly::ProcessorWorker", "image too large, %1 x %2")
                         .arg(size.width()).arg(size.height()),
                     size
                 };
@@ -178,14 +178,14 @@ namespace faceveil
                 const auto [it, inserted] = firstSourceForDestination.emplace(key, item.sourcePath);
                 if (!inserted)
                 {
-                    messages.push_back(QCoreApplication::translate("faceveil::ProcessorWorker",
+                    messages.push_back(QCoreApplication::translate("redactly::ProcessorWorker",
                                                                    "Output name collision: '%1' and '%2' would both write to '%3'")
                         .arg(pathToQString(it->second),
                              pathToQString(item.sourcePath),
                              pathToQString(destination)));
                     if (messages.size() >= 10)
                     {
-                        messages.push_back(QCoreApplication::translate("faceveil::ProcessorWorker",
+                        messages.push_back(QCoreApplication::translate("redactly::ProcessorWorker",
                                                                        "Additional output name collisions omitted."));
                         return true;
                     }
@@ -200,7 +200,7 @@ namespace faceveil
             std::uniform_int_distribution<std::uint64_t> dist;
             const auto suffix = dist(rng);
             auto tempName = destination.stem();
-            tempName += ".faceveil-" + std::to_string(suffix);
+            tempName += ".redactly-" + std::to_string(suffix);
             tempName += destination.extension();
             const auto parent = destination.parent_path();
             return parent.empty() ? tempName : parent / tempName;
@@ -521,7 +521,7 @@ namespace faceveil
                         reviewReceiver_.data(),
                         "requestReview",
                         Qt::BlockingQueuedConnection,
-                        Q_RETURN_ARG(faceveil::ReviewResult, reviewResult),
+                        Q_RETURN_ARG(redactly::ReviewResult, reviewResult),
                         Q_ARG(QImage, preview),
                         Q_ARG(QString, fileName),
                         Q_ARG(QVector<QRectF>, detectedRects),

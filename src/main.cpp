@@ -1,5 +1,5 @@
-#include "faceveil/MainWindow.hpp"
-#include "faceveil/ReviewTypes.hpp"
+#include "redactly/MainWindow.hpp"
+#include "redactly/ReviewTypes.hpp"
 
 #include <QApplication>
 #include <QDir>
@@ -19,8 +19,8 @@
 #include <memory>
 #include <vector>
 
-#ifndef FACEVEIL_VERSION
-#define FACEVEIL_VERSION "0.0.0"
+#ifndef REDACTLY_VERSION
+#define REDACTLY_VERSION "0.0.0"
 #endif
 
 namespace
@@ -54,16 +54,16 @@ namespace
             const auto dataDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
             if (!dataDir.isEmpty())
             {
-                const auto logDir = dataDir + "/FaceVeil/logs";
+                const auto logDir = dataDir + "/Redactly/logs";
                 if (QDir().mkpath(logDir))
                 {
-                    const auto logFile = (logDir + "/faceveil.log").toStdString();
+                    const auto logFile = (logDir + "/redactly.log").toStdString();
                     sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                         logFile, 1024 * 1024, 3));
                 }
             }
 
-            auto logger = std::make_shared<spdlog::logger>("faceveil", sinks.begin(), sinks.end());
+            auto logger = std::make_shared<spdlog::logger>("redactly", sinks.begin(), sinks.end());
             logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
             logger->flush_on(spdlog::level::info);
             spdlog::set_default_logger(logger);
@@ -80,17 +80,17 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QCoreApplication::setOrganizationName("FaceVeil");
-    QCoreApplication::setOrganizationDomain("faceveil.app");
-    QCoreApplication::setApplicationName("FaceVeil");
-    QCoreApplication::setApplicationVersion(FACEVEIL_VERSION);
+    QCoreApplication::setOrganizationName("Redactly");
+    QCoreApplication::setOrganizationDomain("redactly.app");
+    QCoreApplication::setApplicationName("Redactly");
+    QCoreApplication::setApplicationVersion(REDACTLY_VERSION);
 
     setupLogging();
 
     QApplication::setStyle(QStyleFactory::create("Fusion"));
     applyLightPalette(app);
 
-    qRegisterMetaType<faceveil::ReviewResult>("faceveil::ReviewResult");
+    qRegisterMetaType<redactly::ReviewResult>("redactly::ReviewResult");
     qRegisterMetaType<QVector<QRectF> >("QVector<QRectF>");
 
 #ifdef Q_OS_MACOS
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 #endif
     app.setFont(defaultFont);
 
-    faceveil::MainWindow window;
+    redactly::MainWindow window;
     window.show();
     return QApplication::exec();
 }

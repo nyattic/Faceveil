@@ -2,7 +2,7 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ko_KR">
 <context>
-    <name>faceveil::MainWindow</name>
+    <name>redactly::MainWindow</name>
     <message>
         <location filename="../src/MainWindow.cpp" line="332"/>
         <source>Downloading model…</source>
@@ -50,12 +50,12 @@
         <location filename="../src/MainWindow.cpp" line="407"/>
         <source>The %1 model isn&apos;t on this computer yet.
 
-FaceVeil can download it once (%2 MB) from Hugging Face. The model is provided by InsightFace for non-commercial use. Your images are never uploaded.
+Redactly can download it once (%2 MB) from Hugging Face. The model is provided by InsightFace for non-commercial use. Your images are never uploaded.
 
 Download now?</source>
         <translation>%1 모델이 아직 이 컴퓨터에 없습니다.
 
-FaceVeil이 Hugging Face에서 한 번(%2 MB) 다운로드할 수 있습니다. 이 모델은 InsightFace가 비상업적 용도로 제공합니다. 사진은 절대 업로드되지 않습니다.
+Redactly이 Hugging Face에서 한 번(%2 MB) 다운로드할 수 있습니다. 이 모델은 InsightFace가 비상업적 용도로 제공합니다. 사진은 절대 업로드되지 않습니다.
 
 지금 다운로드할까요?</translation>
     </message>
@@ -515,7 +515,7 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
 </context>
 <context>
-    <name>faceveil::ProcessorWorker</name>
+    <name>redactly::ProcessorWorker</name>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="50"/>
         <source>cannot inspect image dimensions</source>
@@ -699,7 +699,7 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
 </context>
 <context>
-    <name>faceveil::ReviewDialog</name>
+    <name>redactly::ReviewDialog</name>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="370"/>
         <source>Review — %1</source>

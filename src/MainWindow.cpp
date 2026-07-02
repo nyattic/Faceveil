@@ -1,10 +1,10 @@
-#include "faceveil/MainWindow.hpp"
+#include "redactly/MainWindow.hpp"
 
-#include "faceveil/PlateDetector.hpp"
-#include "faceveil/ProcessorWorker.hpp"
-#include "faceveil/ReviewDialog.hpp"
-#include "faceveil/ScrfdFaceDetector.hpp"
-#include "faceveil/UpdateChecker.hpp"
+#include "redactly/PlateDetector.hpp"
+#include "redactly/ProcessorWorker.hpp"
+#include "redactly/ReviewDialog.hpp"
+#include "redactly/ScrfdFaceDetector.hpp"
+#include "redactly/UpdateChecker.hpp"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -52,7 +52,7 @@
 
 #include <array>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {
@@ -264,16 +264,16 @@ namespace faceveil
             const auto pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
             if (!pictures.isEmpty())
             {
-                return pictures + "/FaceVeil";
+                return pictures + "/Redactly";
             }
-            return QDir::homePath() + "/FaceVeil";
+            return QDir::homePath() + "/Redactly";
         }
 
         QString modelCacheDir()
         {
             const auto base = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
             const auto root = base.isEmpty() ? QDir::homePath() : base;
-            return root + "/FaceVeil/models";
+            return root + "/Redactly/models";
         }
 
         QString firstExistingModelPath(const QString &fileName)
@@ -354,8 +354,8 @@ namespace faceveil
             request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                                  QNetworkRequest::NoLessSafeRedirectPolicy);
 
-            QProgressDialog progress(QCoreApplication::translate("faceveil::MainWindow", "Downloading model…"),
-                                     QCoreApplication::translate("faceveil::MainWindow", "Cancel"), 0, 0, parent);
+            QProgressDialog progress(QCoreApplication::translate("redactly::MainWindow", "Downloading model…"),
+                                     QCoreApplication::translate("redactly::MainWindow", "Cancel"), 0, 0, parent);
             progress.setWindowModality(Qt::WindowModal);
             progress.setMinimumDuration(0);
             progress.setAutoClose(false);
@@ -383,8 +383,8 @@ namespace faceveil
             {
                 if (reply->error() != QNetworkReply::OperationCanceledError)
                 {
-                    QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Download Failed"),
-                                         QCoreApplication::translate("faceveil::MainWindow", "Could not download the model.\n\n%1")
+                    QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Download Failed"),
+                                         QCoreApplication::translate("redactly::MainWindow", "Could not download the model.\n\n%1")
                                              .arg(reply->errorString()));
                 }
                 return false;
@@ -395,8 +395,8 @@ namespace faceveil
                 QCryptographicHash::hash(data, QCryptographicHash::Sha256).toHex());
             if (actual.compare(model.sha256, Qt::CaseInsensitive) != 0)
             {
-                QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Download Failed"),
-                                     QCoreApplication::translate("faceveil::MainWindow",
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Download Failed"),
+                                     QCoreApplication::translate("redactly::MainWindow",
                                                                  "The downloaded model failed its integrity check and was discarded."));
                 return false;
             }
@@ -407,8 +407,8 @@ namespace faceveil
             if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size())
             {
                 file.remove();
-                QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Download Failed"),
-                                     QCoreApplication::translate("faceveil::MainWindow", "Could not save the model file."));
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Download Failed"),
+                                     QCoreApplication::translate("redactly::MainWindow", "Could not save the model file."));
                 return false;
             }
             file.close();
@@ -416,8 +416,8 @@ namespace faceveil
             if (!QFile::rename(tempPath, destPath))
             {
                 QFile::remove(tempPath);
-                QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Download Failed"),
-                                     QCoreApplication::translate("faceveil::MainWindow", "Could not save the model file."));
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Download Failed"),
+                                     QCoreApplication::translate("redactly::MainWindow", "Could not save the model file."));
                 return false;
             }
             return true;
@@ -428,10 +428,10 @@ namespace faceveil
             const auto sizeMb = QString::number(model.approxBytes / 1024.0 / 1024.0, 'f', 1);
             const auto answer = QMessageBox::question(
                 parent,
-                QCoreApplication::translate("faceveil::MainWindow", "Download Model"),
-                QCoreApplication::translate("faceveil::MainWindow",
+                QCoreApplication::translate("redactly::MainWindow", "Download Model"),
+                QCoreApplication::translate("redactly::MainWindow",
                                             "The %1 model isn't on this computer yet.\n\n"
-                                            "FaceVeil can download it once (%2 MB) from Hugging Face. "
+                                            "Redactly can download it once (%2 MB) from Hugging Face. "
                                             "The model is provided by InsightFace for non-commercial use. "
                                             "Your images are never uploaded.\n\nDownload now?")
                     .arg(model.fileName, sizeMb),
@@ -450,10 +450,10 @@ namespace faceveil
             const auto sizeMb = QString::number(model.approxBytes / 1024.0 / 1024.0, 'f', 1);
             const auto answer = QMessageBox::question(
                 parent,
-                QCoreApplication::translate("faceveil::MainWindow", "Download Model"),
-                QCoreApplication::translate("faceveil::MainWindow",
+                QCoreApplication::translate("redactly::MainWindow", "Download Model"),
+                QCoreApplication::translate("redactly::MainWindow",
                                             "The license plate detection model isn't on this computer yet.\n\n"
-                                            "FaceVeil can download it once (%1 MB) from the open-image-models "
+                                            "Redactly can download it once (%1 MB) from the open-image-models "
                                             "project (MIT-licensed). Your images are never uploaded.\n\nDownload now?")
                     .arg(sizeMb),
                 QMessageBox::Yes | QMessageBox::No,
@@ -492,20 +492,20 @@ namespace faceveil
             const QFileInfo info(path);
             if (!info.exists() || !info.isFile())
             {
-                QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Invalid Model"),
-                                     QCoreApplication::translate("faceveil::MainWindow", "Choose an existing ONNX model file."));
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Invalid Model"),
+                                     QCoreApplication::translate("redactly::MainWindow", "Choose an existing ONNX model file."));
                 return false;
             }
             if (info.suffix().compare("onnx", Qt::CaseInsensitive) != 0)
             {
-                QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Invalid Model"),
-                                     QCoreApplication::translate("faceveil::MainWindow", "The selected model must use the .onnx extension."));
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Invalid Model"),
+                                     QCoreApplication::translate("redactly::MainWindow", "The selected model must use the .onnx extension."));
                 return false;
             }
             if (info.size() > kMaxCustomModelBytes)
             {
-                QMessageBox::warning(parent, QCoreApplication::translate("faceveil::MainWindow", "Model Too Large"),
-                                     QCoreApplication::translate("faceveil::MainWindow",
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Model Too Large"),
+                                     QCoreApplication::translate("redactly::MainWindow",
                                                                  "The selected ONNX file is larger than 512 MB. "
                                                                  "Choose a smaller SCRFD model."));
                 return false;
@@ -518,8 +518,8 @@ namespace faceveil
             const QFileInfo info(path);
             const auto answer = QMessageBox::question(
                 parent,
-                QCoreApplication::translate("faceveil::MainWindow", "Load Custom Model"),
-                QCoreApplication::translate("faceveil::MainWindow",
+                QCoreApplication::translate("redactly::MainWindow", "Load Custom Model"),
+                QCoreApplication::translate("redactly::MainWindow",
                                             "Only load ONNX models from sources you trust.\n\nModel: %1\nSize: %2 MB\n\nContinue?")
                     .arg(info.fileName())
                     .arg(QString::number(info.size() / 1024.0 / 1024.0, 'f', 1)),
@@ -568,7 +568,7 @@ namespace faceveil
 
     MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     {
-        setWindowTitle("FaceVeil");
+        setWindowTitle("Redactly");
         setAcceptDrops(true);
         resize(920, 760);
         setMinimumSize(720, 600);
@@ -598,7 +598,7 @@ namespace faceveil
         auto *titleRow = new QHBoxLayout();
         titleRow->setContentsMargins(0, 0, 0, 0);
         titleRow->setSpacing(8);
-        auto *title = new QLabel("FaceVeil", header);
+        auto *title = new QLabel("Redactly", header);
         title->setObjectName("titleLabel");
 
         languageCombo_ = new QComboBox(header);
@@ -1705,7 +1705,7 @@ namespace faceveil
     void MainWindow::applyLanguage(const QString &language)
     {
         qApp->removeTranslator(&translator_);
-        if (language != "en" && translator_.load(":/i18n/faceveil_" + language + ".qm"))
+        if (language != "en" && translator_.load(":/i18n/redactly_" + language + ".qm"))
         {
             qApp->installTranslator(&translator_);
         }

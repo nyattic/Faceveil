@@ -1,4 +1,4 @@
-#include "faceveil/ImageIo.hpp"
+#include "redactly/ImageIo.hpp"
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -9,11 +9,11 @@
 #include <iterator>
 #include <vector>
 
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
 #include <exiv2/exiv2.hpp>
 #endif
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {
@@ -26,7 +26,7 @@ namespace faceveil
 
     bool metadataSupportAvailable()
     {
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
         return true;
 #else
         return false;
@@ -35,7 +35,7 @@ namespace faceveil
 
     int readExifOrientation(const std::filesystem::path &source)
     {
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
         try
         {
             auto image = Exiv2::ImageFactory::open(toUtf8(source));
@@ -210,7 +210,7 @@ namespace faceveil
                       const std::filesystem::path &destination,
                       bool normalizeOrientation)
     {
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
         try
         {
             auto src = Exiv2::ImageFactory::open(toUtf8(source));

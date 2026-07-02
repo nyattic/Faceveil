@@ -1,6 +1,6 @@
 #pragma once
 
-#include "faceveil/Mosaic.hpp"
+#include "redactly/Mosaic.hpp"
 
 #include <QObject>
 #include <QPointer>
@@ -10,7 +10,7 @@
 #include <atomic>
 #include <memory>
 
-namespace faceveil
+namespace redactly
 {
     class ScrfdFaceDetector;
     class PlateDetector;

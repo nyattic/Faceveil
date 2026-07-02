@@ -1,4 +1,4 @@
-#include "faceveil/ReviewDialog.hpp"
+#include "redactly/ReviewDialog.hpp"
 
 #include <QFrame>
 #include <QHBoxLayout>
@@ -19,7 +19,7 @@
 #include <functional>
 #include <vector>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "faceveil/FaceDetection.hpp"
+#include "redactly/FaceDetection.hpp"
 
 #include <opencv2/core.hpp>
 
-namespace faceveil
+namespace redactly
 {
     enum class AnonymizationMethod
     {

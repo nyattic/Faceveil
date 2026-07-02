@@ -1,7 +1,7 @@
 #pragma once
 
-#include "faceveil/Detector.hpp"
-#include "faceveil/FaceDetection.hpp"
+#include "redactly/Detector.hpp"
+#include "redactly/FaceDetection.hpp"
 
 #include <onnxruntime_cxx_api.h>
 #include <opencv2/core.hpp>
@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace faceveil
+namespace redactly
 {
     class PlateDetector final : public Detector
     {

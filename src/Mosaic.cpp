@@ -1,10 +1,10 @@
-#include "faceveil/Mosaic.hpp"
+#include "redactly/Mosaic.hpp"
 
 #include <opencv2/imgproc.hpp>
 
 #include <algorithm>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {

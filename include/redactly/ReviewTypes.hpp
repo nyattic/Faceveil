@@ -4,7 +4,7 @@
 #include <QRectF>
 #include <QVector>
 
-namespace faceveil
+namespace redactly
 {
     enum class ReviewDecision
     {
@@ -21,4 +21,4 @@ namespace faceveil
     };
 }
 
-Q_DECLARE_METATYPE(faceveil::ReviewResult)
+Q_DECLARE_METATYPE(redactly::ReviewResult)

@@ -6,9 +6,9 @@ set -euo pipefail
 #
 # Credentials — choose ONE of:
 #   1. Keychain profile (RECOMMENDED — stored once, never appears on the CLI):
-#        NOTARY_PROFILE=faceveil-notary
+#        NOTARY_PROFILE=redactly-notary
 #      Create it first with:
-#        xcrun notarytool store-credentials faceveil-notary \
+#        xcrun notarytool store-credentials redactly-notary \
 #          --apple-id "you@example.com" \
 #          --team-id "ABCDE12345" \
 #          --password "app-specific-password"
@@ -25,7 +25,7 @@ set -euo pipefail
 #   NOTARY_TIMEOUT   — seconds to wait for Apple's service (default: 3600)
 #
 # Usage:
-#   scripts/notarize_macos.sh path/to/FaceVeil-x.y.z-arm64.dmg
+#   scripts/notarize_macos.sh path/to/Redactly-x.y.z-arm64.dmg
 
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 <path-to-dmg>"

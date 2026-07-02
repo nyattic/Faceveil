@@ -1,29 +1,35 @@
-# FaceVeil 1.4.0
+# Redactly 1.4.0
+
+The app is now called **Redactly** (formerly FaceVeil), reflecting that it
+redacts more than faces.
 
 Adds license plate anonymization. A new **Detect** option lets you anonymize
 faces, license plates, or both; the license plate detector (an MIT-licensed
 YOLOv9 model from the open-image-models project) is downloaded on first use,
 like the face models. Existing behavior is unchanged — faces stay the default.
 
+Note: settings and downloaded models live under a new **Redactly** data folder,
+so the models are downloaded once more on first launch.
+
 ---
 
-# FaceVeil 1.3.0
+# Redactly 1.3.0
 
-Adds an update check: at launch FaceVeil asks the GitHub Releases API whether a
+Adds an update check: at launch Redactly asks the GitHub Releases API whether a
 newer version exists and, if so, shows a link in the header. No image or
 personal data is sent, and the check can be disabled under Advanced Options →
 Check for updates on startup.
 
 ---
 
-# FaceVeil 1.2.0
+# Redactly 1.2.0
 
-Adds Linux support: FaceVeil now builds on Linux and ships a self-contained
+Adds Linux support: Redactly now builds on Linux and ships a self-contained
 `.AppImage` in each release alongside the macOS and Windows downloads.
 
 ---
 
-# FaceVeil 1.1.2
+# Redactly 1.1.2
 
 Fixes opening images with non-ASCII (e.g. Korean) filenames on Windows, which
 previously failed with "No mapping for the Unicode character exists in the
@@ -31,24 +37,24 @@ target multi-byte code page."
 
 ---
 
-# FaceVeil 1.1.1
+# Redactly 1.1.1
 
 Lowers the default mosaic block size from 28 to 14 pixels for a finer default
 mosaic.
 
 ---
 
-# FaceVeil 1.1.0
+# Redactly 1.1.0
 
 Adds full metadata and quality preservation for photographers, a rounded mask
-shape, a clearer model-download flow, and inline validation. FaceVeil's own
+shape, a clearer model-download flow, and inline validation. Redactly's own
 license moves to the GPL v3.0-or-later.
 
 ## License
-- **The application source code is now under the GNU General Public License v3.0 or later (previously PolyForm Noncommercial 1.0.0).** You may use, study, share, and modify FaceVeil — including commercially — provided that distributed copies and derivatives remain under the GPL with corresponding source available. The change is required because FaceVeil now links **Exiv2** (GPL-2.0-or-later) for metadata handling. Versions released earlier under PolyForm Noncommercial remain under that license.
+- **The application source code is now under the GNU General Public License v3.0 or later (previously PolyForm Noncommercial 1.0.0).** You may use, study, share, and modify Redactly — including commercially — provided that distributed copies and derivatives remain under the GPL with corresponding source available. The change is required because Redactly now links **Exiv2** (GPL-2.0-or-later) for metadata handling. Versions released earlier under PolyForm Noncommercial remain under that license.
 
 ## Features
-- **Preserve original metadata** (Output → checkbox, off by default). When on, FaceVeil copies EXIF / IPTC / XMP and the ICC color profile from the original, and keeps the original format and bit depth at maximum quality — ideal for archiving high-resolution photos. When off, output carries no metadata (GPS, camera, and timestamps are stripped) for privacy.
+- **Preserve original metadata** (Output → checkbox, off by default). When on, Redactly copies EXIF / IPTC / XMP and the ICC color profile from the original, and keeps the original format and bit depth at maximum quality — ideal for archiving high-resolution photos. When off, output carries no metadata (GPS, camera, and timestamps are stripped) for privacy.
 - **Lossless / maximum-quality encoding**: JPEG is written at quality 100 with no chroma subsampling; PNG, WebP, and TIFF are written losslessly. 16-bit and alpha channels are preserved.
 - **Mask shape** (Advanced): **Rectangle** or **Rounded (ellipse)** that follows the face and leaves corners untouched.
 - **Download button** for built-in models: a model that isn't on disk shows a Download button next to its path, so you no longer have to press Start to trigger the download.
@@ -60,9 +66,9 @@ license moves to the GPL v3.0-or-later.
 
 ---
 
-# FaceVeil 1.0.0
+# Redactly 1.0.0
 
-The first 1.0 release. FaceVeil is now licensed for noncommercial use, speaks English and Korean, fetches its face-detection models on first use instead of bundling them, works with current ONNX Runtime, and adds new anonymization styles, a run summary, and diagnostic logging.
+The first 1.0 release. Redactly is now licensed for noncommercial use, speaks English and Korean, fetches its face-detection models on first use instead of bundling them, works with current ONNX Runtime, and adds new anonymization styles, a run summary, and diagnostic logging.
 
 ## License
 - **The application source code is now under the PolyForm Noncommercial License 1.0.0 (previously MIT).** Personal and other noncommercial use is permitted; commercial use is not. Versions released earlier under MIT remain MIT.
@@ -80,19 +86,19 @@ The first 1.0 release. FaceVeil is now licensed for noncommercial use, speaks En
 - The interface is available in **English** and **한국어 (Korean)**, switchable live from the header. The initial language follows your system locale.
 
 ## Models & privacy
-- SCRFD models are no longer bundled in the download. On first use of a built-in model, FaceVeil fetches it once from Hugging Face with a SHA-256 integrity check and caches it locally. Your images are always processed on-device and never uploaded.
+- SCRFD models are no longer bundled in the download. On first use of a built-in model, Redactly fetches it once from Hugging Face with a SHA-256 integrity check and caches it locally. Your images are always processed on-device and never uploaded.
 
 ## Logging
-- Logging now runs through spdlog: colored console output plus a rotating log file under the platform data directory (`~/Library/Application Support/FaceVeil/logs` on macOS)
+- Logging now runs through spdlog: colored console output plus a rotating log file under the platform data directory (`~/Library/Application Support/Redactly/logs` on macOS)
 
 ## Download
 
-- **macOS (Apple Silicon)** — `FaceVeil-1.0.0-arm64.dmg`, signed and notarized. Requires macOS 15+.
-- **Windows (x64)** — `FaceVeil-1.0.0-windows-x64.zip`. Unzip and run `FaceVeil.exe`. Requires Windows 10 or later.
+- **macOS (Apple Silicon)** — `Redactly-1.0.0-arm64.dmg`, signed and notarized. Requires macOS 15+.
+- **Windows (x64)** — `Redactly-1.0.0-windows-x64.zip`. Unzip and run `Redactly.exe`. Requires Windows 10 or later.
 
 ---
 
-# FaceVeil 0.1.2
+# Redactly 0.1.2
 
 A maintenance release focused on safer batch processing, clearer review behavior, and basic automated test coverage.
 
@@ -117,12 +123,12 @@ A maintenance release focused on safer batch processing, clearer review behavior
 
 ## Download
 
-- **macOS (Apple Silicon)** — `FaceVeil-0.1.2-arm64.dmg`, signed and notarized. Requires macOS 12+.
-- **Windows (x64)** — `FaceVeil-0.1.2-windows-x64.zip`. Unzip and run `FaceVeil.exe`. Requires Windows 10 or later.
+- **macOS (Apple Silicon)** — `Redactly-0.1.2-arm64.dmg`, signed and notarized. Requires macOS 12+.
+- **Windows (x64)** — `Redactly-0.1.2-windows-x64.zip`. Unzip and run `Redactly.exe`. Requires Windows 10 or later.
 
 ---
 
-# FaceVeil 0.1.1
+# Redactly 0.1.1
 
 A maintenance release: security, stability, and UX improvements. No feature changes.
 
@@ -159,5 +165,5 @@ A maintenance release: security, stability, and UX improvements. No feature chan
 
 ## Download
 
-- **macOS (Apple Silicon)** — `FaceVeil-0.1.1-arm64.dmg`, signed and notarized. Requires macOS 12+.
-- **Windows (x64)** — `FaceVeil-0.1.1-windows-x64.zip`. Unzip and run `FaceVeil.exe`. Requires Windows 10 or later.
+- **macOS (Apple Silicon)** — `Redactly-0.1.1-arm64.dmg`, signed and notarized. Requires macOS 12+.
+- **Windows (x64)** — `Redactly-0.1.1-windows-x64.zip`. Unzip and run `Redactly.exe`. Requires Windows 10 or later.

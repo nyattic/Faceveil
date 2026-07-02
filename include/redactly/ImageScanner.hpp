@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace faceveil
+namespace redactly
 {
     struct ScanResult
     {

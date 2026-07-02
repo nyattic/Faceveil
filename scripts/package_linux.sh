@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ── Config ─────────────────────────────────────────────────────────
-# Builds FaceVeil and packages it as a self-contained AppImage.
+# Builds Redactly and packages it as a self-contained AppImage.
 #
 # Required environment variables:
 #   ONNXRUNTIME_ROOT — path to the ONNX Runtime release (containing include/ and
@@ -41,17 +41,17 @@ cmake --build "$BUILD_DIR" --config Release
 rm -rf "$APPDIR"
 DESTDIR="$APPDIR" cmake --install "$BUILD_DIR"
 
-VERSION="$(sed -n 's/^project(FaceVeil VERSION \([0-9.]*\).*/\1/p' "$ROOT_DIR/CMakeLists.txt")"
+VERSION="$(sed -n 's/^project(Redactly VERSION \([0-9.]*\).*/\1/p' "$ROOT_DIR/CMakeLists.txt")"
 VERSION="${VERSION:-0.0.0}"
 
 # Ship the license and third-party notices next to the binary.
-install -Dm644 "$ROOT_DIR/THIRD_PARTY_NOTICES.txt" "$APPDIR/usr/share/doc/faceveil/THIRD_PARTY_NOTICES.txt"
-install -Dm644 "$ROOT_DIR/LICENSE" "$APPDIR/usr/share/doc/faceveil/LICENSE.txt"
+install -Dm644 "$ROOT_DIR/THIRD_PARTY_NOTICES.txt" "$APPDIR/usr/share/doc/redactly/THIRD_PARTY_NOTICES.txt"
+install -Dm644 "$ROOT_DIR/LICENSE" "$APPDIR/usr/share/doc/redactly/LICENSE.txt"
 
 # linuxdeploy resolves the icon by the desktop file's Icon= name and only
-# accepts standard icon resolutions, so use the 512x512 asset named faceveil.png.
-ICON_STAGE="$BUILD_DIR/faceveil.png"
-cp "$ROOT_DIR/assets/faceveil-512.png" "$ICON_STAGE"
+# accepts standard icon resolutions, so use the 512x512 asset named redactly.png.
+ICON_STAGE="$BUILD_DIR/redactly.png"
+cp "$ROOT_DIR/assets/redactly-512.png" "$ICON_STAGE"
 
 # ── Fetch linuxdeploy + Qt plugin ──────────────────────────────────
 TOOLS_DIR="$BUILD_DIR/appimage-tools"
@@ -89,13 +89,13 @@ fi
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-OUTPUT="FaceVeil-${VERSION}-${ARCH}.AppImage"
+OUTPUT="Redactly-${VERSION}-${ARCH}.AppImage"
 (
     cd "$DIST_DIR"
     OUTPUT="$OUTPUT" "$LINUXDEPLOY" \
         --appdir "$APPDIR" \
-        --executable "$APPDIR/usr/bin/FaceVeil" \
-        --desktop-file "$APPDIR/usr/share/applications/faceveil.desktop" \
+        --executable "$APPDIR/usr/bin/Redactly" \
+        --desktop-file "$APPDIR/usr/share/applications/redactly.desktop" \
         --icon-file "$ICON_STAGE" \
         --plugin qt \
         "${DEPLOY_ARGS[@]}" \

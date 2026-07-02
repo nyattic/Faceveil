@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace faceveil
+namespace redactly
 {
     bool metadataSupportAvailable();
 

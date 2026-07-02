@@ -1,6 +1,6 @@
 #pragma once
 
-#include "faceveil/ReviewTypes.hpp"
+#include "redactly/ReviewTypes.hpp"
 
 #include <QDialog>
 #include <QImage>
@@ -12,7 +12,7 @@ class QMouseEvent;
 class QPaintEvent;
 class QPushButton;
 
-namespace faceveil
+namespace redactly
 {
     class ReviewCanvas;
 

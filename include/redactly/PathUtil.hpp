@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <string>
 
-namespace faceveil
+namespace redactly
 {
     inline std::filesystem::path pathFromQString(const QString &value)
     {

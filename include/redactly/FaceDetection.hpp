@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace faceveil
+namespace redactly
 {
     struct FaceDetection
     {

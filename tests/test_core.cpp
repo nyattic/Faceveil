@@ -1,6 +1,6 @@
-#include "faceveil/ImageIo.hpp"
-#include "faceveil/ImageScanner.hpp"
-#include "faceveil/Mosaic.hpp"
+#include "redactly/ImageIo.hpp"
+#include "redactly/ImageScanner.hpp"
+#include "redactly/Mosaic.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -14,7 +14,7 @@
 #include <filesystem>
 #include <set>
 
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
 #include <exiv2/exiv2.hpp>
 #endif
 
@@ -29,10 +29,10 @@ namespace
 
     void testSupportedImageExtensions()
     {
-        assert(faceveil::isSupportedImage("photo.jpg"));
-        assert(faceveil::isSupportedImage("photo.JPEG"));
-        assert(faceveil::isSupportedImage("photo.webp"));
-        assert(!faceveil::isSupportedImage("photo.txt"));
+        assert(redactly::isSupportedImage("photo.jpg"));
+        assert(redactly::isSupportedImage("photo.JPEG"));
+        assert(redactly::isSupportedImage("photo.webp"));
+        assert(!redactly::isSupportedImage("photo.txt"));
     }
 
     void testScanImagesRecursesAndDeduplicates()
@@ -51,10 +51,10 @@ namespace
         writeBytes(second);
         writeBytes(ignored);
 
-        const auto nonRecursive = faceveil::scanImages({root.filePath("a")}, false);
+        const auto nonRecursive = redactly::scanImages({root.filePath("a")}, false);
         assert(nonRecursive.size() == 1);
 
-        const auto recursive = faceveil::scanImages({root.filePath("a"), first}, true);
+        const auto recursive = redactly::scanImages({root.filePath("a"), first}, true);
         assert(recursive.size() == 2);
 
         std::set<std::string> relativePaths;
@@ -82,9 +82,9 @@ namespace
         const cv::Vec3b outsideBefore = image.at<cv::Vec3b>(0, 0);
         const cv::Vec3b insideBefore = image.at<cv::Vec3b>(3, 3);
 
-        faceveil::FaceDetections detections;
+        redactly::FaceDetections detections;
         detections.push_back({cv::Rect2f(2.0F, 2.0F, 4.0F, 4.0F), 1.0F});
-        faceveil::applyMosaic(image, detections, 4, 0.0F);
+        redactly::applyMosaic(image, detections, 4, 0.0F);
 
         assert(image.at<cv::Vec3b>(0, 0) == outsideBefore);
         assert(image.at<cv::Vec3b>(3, 3) != insideBefore);
@@ -102,33 +102,33 @@ namespace
         }
 
         cv::Mat identity = base.clone();
-        faceveil::applyOrientation(identity, 1);
+        redactly::applyOrientation(identity, 1);
         assert(cv::countNonZero(identity != base) == 0);
 
         cv::Mat rotated = base.clone();
-        faceveil::applyOrientation(rotated, 6);
+        redactly::applyOrientation(rotated, 6);
         assert(rotated.rows == 3 && rotated.cols == 2);
         assert(rotated.at<uchar>(0, 0) == base.at<uchar>(base.rows - 1, 0));
 
         cv::Mat mirrored = base.clone();
-        faceveil::applyOrientation(mirrored, 2);
+        redactly::applyOrientation(mirrored, 2);
         assert(mirrored.rows == 2 && mirrored.cols == 3);
         assert(mirrored.at<uchar>(0, 0) == base.at<uchar>(0, base.cols - 1));
     }
 
     void testEncodeParams()
     {
-        const auto jpeg = faceveil::encodeParamsForExtension(".JPG");
+        const auto jpeg = redactly::encodeParamsForExtension(".JPG");
         assert(std::find(jpeg.begin(), jpeg.end(), cv::IMWRITE_JPEG_QUALITY) != jpeg.end());
         assert(std::find(jpeg.begin(), jpeg.end(), 100) != jpeg.end());
 
-        const auto png = faceveil::encodeParamsForExtension("png");
+        const auto png = redactly::encodeParamsForExtension("png");
         assert(std::find(png.begin(), png.end(), cv::IMWRITE_PNG_COMPRESSION) != png.end());
 
-        assert(faceveil::encodeParamsForExtension(".bmp").empty());
+        assert(redactly::encodeParamsForExtension(".bmp").empty());
     }
 
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
     void testMetadataCopyAndOrientationNormalize()
     {
         QTemporaryDir temp;
@@ -148,8 +148,8 @@ namespace
             image->writeMetadata();
         }
 
-        assert(faceveil::readExifOrientation(src) == 6);
-        assert(faceveil::copyMetadata(src, dst, true));
+        assert(redactly::readExifOrientation(src) == 6);
+        assert(redactly::copyMetadata(src, dst, true));
 
         {
             auto image = Exiv2::ImageFactory::open(dst.string());
@@ -175,7 +175,7 @@ int main()
     testApplyMosaicTouchesOnlyDetectedRegion();
     testOrientationTransforms();
     testEncodeParams();
-#ifdef FACEVEIL_HAVE_EXIV2
+#ifdef REDACTLY_HAVE_EXIV2
     testMetadataCopyAndOrientationNormalize();
 #endif
     return 0;

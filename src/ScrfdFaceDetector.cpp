@@ -1,4 +1,4 @@
-#include "faceveil/ScrfdFaceDetector.hpp"
+#include "redactly/ScrfdFaceDetector.hpp"
 
 #include <opencv2/imgproc.hpp>
 
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {
@@ -30,7 +30,7 @@ namespace faceveil
 
     ScrfdFaceDetector::ScrfdFaceDetector(const std::string &modelPath, int inputSize)
         : inputSize_(inputSize),
-          env_(ORT_LOGGING_LEVEL_WARNING, "FaceVeil"),
+          env_(ORT_LOGGING_LEVEL_WARNING, "Redactly"),
           sessionOptions_(),
           session_(nullptr)
     {

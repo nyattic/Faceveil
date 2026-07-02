@@ -1,4 +1,4 @@
-#include "faceveil/PlateDetector.hpp"
+#include "redactly/PlateDetector.hpp"
 
 #include <opencv2/imgproc.hpp>
 
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {

@@ -5,7 +5,7 @@
 
 class QNetworkAccessManager;
 
-namespace faceveil
+namespace redactly
 {
     class UpdateChecker final : public QObject
     {

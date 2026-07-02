@@ -1,6 +1,6 @@
 #pragma once
 
-#include "faceveil/ReviewTypes.hpp"
+#include "redactly/ReviewTypes.hpp"
 
 #include <QMainWindow>
 #include <QTranslator>
@@ -24,7 +24,7 @@ class QThread;
 class QToolButton;
 class QWidget;
 
-namespace faceveil
+namespace redactly
 {
     class ProcessorWorker;
     class ScrfdFaceDetector;
@@ -39,7 +39,7 @@ namespace faceveil
 
         ~MainWindow() override;
 
-        Q_INVOKABLE faceveil::ReviewResult requestReview(const QImage &image,
+        Q_INVOKABLE redactly::ReviewResult requestReview(const QImage &image,
                                                          const QString &sourceName,
                                                          const QVector<QRectF> &detected,
                                                          int currentIndex,

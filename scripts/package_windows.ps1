@@ -4,7 +4,7 @@ param(
     [string]$OnnxRuntimeRoot = $env:ONNXRUNTIME_ROOT,
     # Optional. Root of an Exiv2 install (e.g. a vcpkg installed\x64-windows tree,
     # or an Exiv2 CMake package dir). Enables metadata preservation. When omitted,
-    # FaceVeil still builds, but the "Preserve original metadata" option is inert.
+    # Redactly still builds, but the "Preserve original metadata" option is inert.
     [string]$Exiv2Root = $env:EXIV2_ROOT,
     [string]$Generator = "Ninja",
     [string]$BuildType = "Release"
@@ -14,8 +14,8 @@ $ErrorActionPreference = "Stop"
 
 $RootDir = Resolve-Path (Join-Path $PSScriptRoot "..")
 $BuildDir = Join-Path $RootDir "build-windows"
-$DistDir = Join-Path $RootDir "dist/windows/FaceVeil"
-$ExePath = Join-Path $BuildDir "FaceVeil.exe"
+$DistDir = Join-Path $RootDir "dist/windows/Redactly"
+$ExePath = Join-Path $BuildDir "Redactly.exe"
 
 # ── Tool sanity ────────────────────────────────────────────────────
 foreach ($tool in @("cmake")) {
@@ -107,10 +107,10 @@ if ($LASTEXITCODE -ne 0) { throw "CMake build failed (exit $LASTEXITCODE)" }
 
 # Ninja emits directly to $BuildDir; multi-config generators use $BuildDir\$BuildType.
 if (-not (Test-Path $ExePath)) {
-    $ExePath = Join-Path $BuildDir "$BuildType/FaceVeil.exe"
+    $ExePath = Join-Path $BuildDir "$BuildType/Redactly.exe"
 }
 if (-not (Test-Path $ExePath)) {
-    throw "FaceVeil.exe was not found after build (looked in $BuildDir and $BuildDir\$BuildType)."
+    throw "Redactly.exe was not found after build (looked in $BuildDir and $BuildDir\$BuildType)."
 }
 
 # ── Assemble dist tree ─────────────────────────────────────────────
@@ -125,7 +125,7 @@ $windeployqt = Join-Path $QtRoot "bin/windeployqt.exe"
 if (-not (Test-Path $windeployqt)) {
     throw "windeployqt.exe was not found under $QtRoot\bin"
 }
-& $windeployqt --release --compiler-runtime (Join-Path $DistDir "FaceVeil.exe")
+& $windeployqt --release --compiler-runtime (Join-Path $DistDir "Redactly.exe")
 if ($LASTEXITCODE -ne 0) { throw "windeployqt failed (exit $LASTEXITCODE)" }
 
 # ── ONNX Runtime DLL ───────────────────────────────────────────────
@@ -234,4 +234,4 @@ if (Get-ChildItem -Path $DistDir -Recurse -Filter *.onnx -ErrorAction SilentlyCo
 
 Write-Host ""
 Write-Host "✅ Packaged app: $DistDir"
-Write-Host "   Run with:     $DistDir\FaceVeil.exe"
+Write-Host "   Run with:     $DistDir\Redactly.exe"

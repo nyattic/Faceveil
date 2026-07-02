@@ -8,20 +8,20 @@ set -euo pipefail
 #                    If unset, the script falls back to ad-hoc signing and
 #                    skips DMG packaging (local-only build).
 # Optional:
-#   BUNDLE_ID      — override bundle identifier (default: com.faceveil.app)
+#   BUNDLE_ID      — override bundle identifier (default: com.redactly.app)
 #   SKIP_DMG=1     — build + sign the .app but skip the DMG step.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="$ROOT_DIR/build-release"
 DIST_DIR="$ROOT_DIR/dist/macos"
-APP_NAME="FaceVeil.app"
+APP_NAME="Redactly.app"
 APP_PATH="$BUILD_DIR/$APP_NAME"
 DIST_APP="$DIST_DIR/$APP_NAME"
 FRAMEWORKS_DIR="$DIST_APP/Contents/Frameworks"
 MACOS_DIR="$DIST_APP/Contents/MacOS"
-EXECUTABLE="$MACOS_DIR/FaceVeil"
+EXECUTABLE="$MACOS_DIR/Redactly"
 ENTITLEMENTS="$ROOT_DIR/scripts/entitlements.plist"
-BUNDLE_ID="${BUNDLE_ID:-com.faceveil.app}"
+BUNDLE_ID="${BUNDLE_ID:-com.redactly.app}"
 
 # Required tools.
 for tool in cmake codesign macdeployqt install_name_tool otool hdiutil ditto brew; do
@@ -214,7 +214,7 @@ if [[ "${SKIP_DMG:-0}" == "1" ]]; then
     exit 0
 fi
 
-DMG_NAME="FaceVeil-${VERSION}-arm64.dmg"
+DMG_NAME="Redactly-${VERSION}-arm64.dmg"
 DMG_PATH="$DIST_DIR/$DMG_NAME"
 STAGING_DIR="$(mktemp -d)"
 trap 'rm -rf "$STAGING_DIR" || true' EXIT
@@ -224,7 +224,7 @@ ln -s /Applications "$STAGING_DIR/Applications"
 
 rm -f "$DMG_PATH"
 hdiutil create \
-    -volname "FaceVeil" \
+    -volname "Redactly" \
     -srcfolder "$STAGING_DIR" \
     -ov \
     -format UDZO \

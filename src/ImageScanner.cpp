@@ -1,6 +1,6 @@
-#include "faceveil/ImageScanner.hpp"
+#include "redactly/ImageScanner.hpp"
 
-#include "faceveil/PathUtil.hpp"
+#include "redactly/PathUtil.hpp"
 
 #include <QFileInfo>
 
@@ -8,7 +8,7 @@
 #include <system_error>
 #include <unordered_set>
 
-namespace faceveil
+namespace redactly
 {
     namespace
     {
