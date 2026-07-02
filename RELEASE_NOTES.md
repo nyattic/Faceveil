@@ -1,3 +1,11 @@
+# FaceVeil 1.1.2
+
+Fixes opening images with non-ASCII (e.g. Korean) filenames on Windows, which
+previously failed with "No mapping for the Unicode character exists in the
+target multi-byte code page."
+
+---
+
 # FaceVeil 1.1.1
 
 Lowers the default mosaic block size from 28 to 14 pixels for a finer default
