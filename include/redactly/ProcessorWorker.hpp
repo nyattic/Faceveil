@@ -15,6 +15,13 @@ namespace redactly
     class ScrfdFaceDetector;
     class PlateDetector;
 
+    enum class RunOutcome
+    {
+        Completed,
+        Cancelled,
+        Failed,
+    };
+
     class ProcessorWorker final : public QObject
     {
         Q_OBJECT
@@ -57,7 +64,7 @@ namespace redactly
 
         void logMessage(const QString &message);
 
-        void finished(bool cancelled);
+        void finished(redactly::RunOutcome outcome);
 
     private:
         QString modelPath_;
@@ -81,3 +88,5 @@ namespace redactly
         std::shared_ptr<PlateDetector> plateDetector_;
     };
 }
+
+Q_DECLARE_METATYPE(redactly::RunOutcome)

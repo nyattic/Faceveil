@@ -1,4 +1,5 @@
 #include "redactly/MainWindow.hpp"
+#include "redactly/ProcessorWorker.hpp"
 #include "redactly/ReviewTypes.hpp"
 #include "redactly/Theme.hpp"
 
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
     }
 
     qRegisterMetaType<redactly::ReviewResult>("redactly::ReviewResult");
+    qRegisterMetaType<redactly::RunOutcome>("redactly::RunOutcome");
     qRegisterMetaType<QVector<QRectF> >("QVector<QRectF>");
 
 #ifdef Q_OS_MACOS

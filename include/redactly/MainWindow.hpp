@@ -1,5 +1,6 @@
 #pragma once
 
+#include "redactly/ProcessorWorker.hpp"
 #include "redactly/ReviewTypes.hpp"
 #include "redactly/Theme.hpp"
 
@@ -70,7 +71,7 @@ namespace redactly
 
         void stopProcessing() const;
 
-        void onWorkerFinished(bool cancelled);
+        void onWorkerFinished(redactly::RunOutcome outcome);
 
         void toggleAdvanced(bool expanded) const;
 

@@ -389,7 +389,8 @@ namespace redactly
 
         hintLabel_ = new QLabel(
             tr("Click a box to toggle · Drag an empty area to add · "
-               "Click a blue box to delete · %1 / %2 to undo/redo")
+               "Click a blue box to delete · %1 / %2 to undo/redo · "
+               "Esc skips this image without saving")
                 .arg(QKeySequence(QKeySequence::Undo).toString(QKeySequence::NativeText),
                      QKeySequence(QKeySequence::Redo).toString(QKeySequence::NativeText)), this);
         hintLabel_->setStyleSheet("color: #6B7280; font-size: 12px;");
@@ -431,10 +432,20 @@ namespace redactly
         buttonRow->addWidget(save);
         root->addLayout(buttonRow);
 
-        connect(cancelAll, &QPushButton::clicked, this, [this]
+        connect(cancelAll, &QPushButton::clicked, this, [this, currentIndex, total]
         {
+            const int remaining = total - currentIndex + 1;
+            const auto answer = QMessageBox::question(
+                this, tr("Cancel All?"),
+                tr("Stop reviewing and cancel the remaining %1 image(s)?\n\n"
+                   "Images already saved are kept.").arg(remaining),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer != QMessageBox::Yes)
+            {
+                return;
+            }
             decision_ = ReviewDecision::CancelAll;
-            reject();
+            QDialog::reject();
         });
         connect(undoButton, &QPushButton::clicked, this, [this] { canvas_->undo(); });
         connect(redoButton, &QPushButton::clicked, this, [this] { canvas_->redo(); });
@@ -489,7 +500,7 @@ namespace redactly
 
     void ReviewDialog::reject()
     {
-        decision_ = ReviewDecision::CancelAll;
+        decision_ = ReviewDecision::DoNotSave;
         QDialog::reject();
     }
 }

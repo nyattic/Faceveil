@@ -1161,11 +1161,27 @@ namespace redactly
         }
     }
 
-    void MainWindow::onWorkerFinished(bool cancelled)
+    void MainWindow::onWorkerFinished(RunOutcome outcome)
     {
-        appendLog(cancelled ? tr("Cancelled.") : tr("Finished."));
-        statusLabel_->setText(cancelled ? tr("Cancelled") : tr("Done"));
         setProcessing(false);
+        switch (outcome)
+        {
+            case RunOutcome::Completed:
+                appendLog(tr("Finished."));
+                statusLabel_->setText(tr("Done"));
+                break;
+            case RunOutcome::Cancelled:
+                appendLog(tr("Cancelled."));
+                statusLabel_->setText(tr("Cancelled"));
+                break;
+            case RunOutcome::Failed:
+                appendLog(tr("Failed — check the log for details."));
+                statusLabel_->setProperty("state", "warning");
+                statusLabel_->style()->unpolish(statusLabel_);
+                statusLabel_->style()->polish(statusLabel_);
+                statusLabel_->setText(QStringLiteral("⚠  ") + tr("Failed — check the log"));
+                break;
+        }
 
         if (worker_ != nullptr)
         {

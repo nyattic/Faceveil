@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPENCV_SHA256: bff38466091c313dac21a0b73eea8278316a89c1d434c6f0b10697e087670168
+  ONNXRUNTIME_SHA256: 78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
+  ONNXRUNTIME_LINUX_SHA256: 67db4dc1561f1e3fd42e619575c82c601ef89849afc7ea85a003abbac1a1a105
+
+jobs:
+  macos:
+    name: Build & test macOS
+    runs-on: macos-15
+    env:
+      CMAKE_PREFIX_PATH: /opt/homebrew
+      PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Install dependencies
+        run: brew install cmake qt opencv onnxruntime spdlog exiv2
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  linux:
+    name: Build & test Linux
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build build-essential pkg-config \
+            libopencv-dev libspdlog-dev libexiv2-dev \
+            libgl1-mesa-dev libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4
+        with:
+          version: '6.8.1'
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: true
+
+      - name: Install ONNX Runtime
+        run: |
+          curl -fL "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz" -o onnx.tgz
+          echo "${ONNXRUNTIME_LINUX_SHA256}  onnx.tgz" | sha256sum -c -
+          mkdir -p "$HOME/onnx"
+          tar -xzf onnx.tgz -C "$HOME/onnx"
+          echo "ONNXRUNTIME_ROOT=$HOME/onnx/onnxruntime-linux-x64-1.20.1" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows:
+    name: Build & test Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4
+        with:
+          version: '6.8.1'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with:
+          arch: amd64
+
+      - name: Install OpenCV
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe" -OutFile opencv.exe
+          $h = (Get-FileHash -Algorithm SHA256 opencv.exe).Hash.ToLower()
+          if ($h -ne "$env:OPENCV_SHA256") { throw "OpenCV SHA256 mismatch: got $h" }
+          Start-Process -FilePath .\opencv.exe -ArgumentList '-o"C:\opencv" -y' -Wait
+          "OpenCV_DIR=C:\opencv\opencv\build\x64\vc16\lib" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install ONNX Runtime
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-1.20.1.zip" -OutFile onnx.zip
+          $h = (Get-FileHash -Algorithm SHA256 onnx.zip).Hash.ToLower()
+          if ($h -ne "$env:ONNXRUNTIME_SHA256") { throw "ONNX Runtime SHA256 mismatch: got $h" }
+          Expand-Archive -Path onnx.zip -DestinationPath C:\onnx -Force
+          "ONNXRUNTIME_ROOT=C:\onnx\onnxruntime-win-x64-1.20.1" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install spdlog and Exiv2
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install "spdlog:x64-windows-static-md" "exiv2:x64-windows-static-md"
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $env:CMAKE_PREFIX_PATH = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows-static-md"
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DONNXRUNTIME_ROOT=$env:ONNXRUNTIME_ROOT"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\opencv\opencv\build\x64\vc16\bin;$env:PATH"
+          ctest --test-dir build --output-on-failure

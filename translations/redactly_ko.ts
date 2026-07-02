@@ -513,6 +513,14 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <translation>완료</translation>
     </message>
     <message>
+        <source>Failed — check the log for details.</source>
+        <translation>실패 — 자세한 내용은 로그를 확인하세요.</translation>
+    </message>
+    <message>
+        <source>Failed — check the log</source>
+        <translation>실패 — 로그를 확인하세요</translation>
+    </message>
+    <message>
         <location filename="../src/MainWindow.cpp" line="1361"/>
         <source>Fast  ·  SCRFD 2.5G</source>
         <translation>빠름  ·  SCRFD 2.5G</translation>
@@ -701,6 +709,18 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <translation>가려진 영역 없이 저장됨: %1</translation>
     </message>
     <message>
+        <source>Skipped (source and destination are the same file): %1</source>
+        <translation>건너뜀 (원본과 저장 위치가 같은 파일): %1</translation>
+    </message>
+    <message>
+        <source>Error processing %1: %2</source>
+        <translation>%1 처리 중 오류: %2</translation>
+    </message>
+    <message>
+        <source>Unexpected error — processing stopped.</source>
+        <translation>예기치 못한 오류로 처리를 중단했습니다.</translation>
+    </message>
+    <message>
         <location filename="../src/ProcessorWorker.cpp" line="562"/>
         <source>Summary: %1 anonymized, %2 copied, %3 skipped, %4 failed (of %5).</source>
         <translation>요약: 익명화 %1, 복사 %2, 건너뜀 %3, 실패 %4 (총 %5).</translation>
@@ -729,13 +749,25 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="389"/>
-        <source>Click a box to toggle · Drag an empty area to add · Click a blue box to delete · %1 / %2 to undo/redo</source>
-        <translation>상자를 클릭해 전환 · 빈 영역을 드래그해 추가 · 파란 상자를 클릭해 삭제 · %1 / %2 실행 취소/다시 실행</translation>
+        <source>Click a box to toggle · Drag an empty area to add · Click a blue box to delete · %1 / %2 to undo/redo · Esc skips this image without saving</source>
+        <translation>상자를 클릭해 전환 · 빈 영역을 드래그해 추가 · 파란 상자를 클릭해 삭제 · %1 / %2 실행 취소/다시 실행 · Esc는 저장하지 않고 건너뜀</translation>
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="399"/>
         <source>Cancel All</source>
         <translation>모두 취소</translation>
+    </message>
+    <message>
+        <source>Cancel All?</source>
+        <translation>모두 취소할까요?</translation>
+    </message>
+    <message>
+        <source>Stop reviewing and cancel the remaining %1 image(s)?
+
+Images already saved are kept.</source>
+        <translation>검토를 중단하고 남은 이미지 %1장을 취소할까요?
+
+이미 저장된 이미지는 유지됩니다.</translation>
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="402"/>
