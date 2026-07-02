@@ -2,6 +2,7 @@
 
 #include "faceveil/ImageIo.hpp"
 #include "faceveil/ImageScanner.hpp"
+#include "faceveil/PathUtil.hpp"
 #include "faceveil/Mosaic.hpp"
 #include "faceveil/ReviewTypes.hpp"
 #include "faceveil/ScrfdFaceDetector.hpp"
@@ -42,7 +43,7 @@ namespace faceveil
 
         ImageDimensionCheck inspectImageDimensions(const std::filesystem::path &source)
         {
-            QImageReader reader(QString::fromStdString(source.string()));
+            QImageReader reader(pathToQString(source));
             reader.setAutoTransform(false);
 
             const QSize size = reader.size();
@@ -114,7 +115,7 @@ namespace faceveil
                 return false;
             }
             const auto first = relative.begin();
-            return first != relative.end() && first->string() != "..";
+            return first != relative.end() && *first != "..";
         }
 
         bool destinationIsSafe(const std::filesystem::path &destination,
@@ -154,7 +155,7 @@ namespace faceveil
 
         std::string destinationKey(const std::filesystem::path &path)
         {
-            auto key = path.lexically_normal().string();
+            auto key = pathToUtf8(path.lexically_normal());
 #if defined(_WIN32) || defined(__APPLE__)
             std::ranges::transform(key, key.begin(), [](unsigned char ch)
             {
@@ -178,9 +179,9 @@ namespace faceveil
                 {
                     messages.push_back(QCoreApplication::translate("faceveil::ProcessorWorker",
                                                                    "Output name collision: '%1' and '%2' would both write to '%3'")
-                        .arg(QString::fromStdString(it->second.string()),
-                             QString::fromStdString(item.sourcePath.string()),
-                             QString::fromStdString(destination.string())));
+                        .arg(pathToQString(it->second),
+                             pathToQString(item.sourcePath),
+                             pathToQString(destination)));
                     if (messages.size() >= 10)
                     {
                         messages.push_back(QCoreApplication::translate("faceveil::ProcessorWorker",
@@ -197,18 +198,18 @@ namespace faceveil
             static thread_local std::mt19937_64 rng{std::random_device{}()};
             std::uniform_int_distribution<std::uint64_t> dist;
             const auto suffix = dist(rng);
-            const auto stem = destination.stem().string();
-            const auto ext = destination.extension().string();
+            auto tempName = destination.stem();
+            tempName += ".faceveil-" + std::to_string(suffix);
+            tempName += destination.extension();
             const auto parent = destination.parent_path();
-            const auto tempName = stem + ".faceveil-" + std::to_string(suffix) + ext;
-            return parent.empty() ? std::filesystem::path(tempName) : parent / tempName;
+            return parent.empty() ? tempName : parent / tempName;
         }
 
         bool atomicImwrite(const std::filesystem::path &destination, const cv::Mat &image,
                            const std::vector<int> &params = {})
         {
             const auto temp = uniqueTempPath(destination);
-            if (!cv::imwrite(temp.string(), image, params))
+            if (!imwriteUnicode(temp, image, params))
             {
                 std::error_code ec;
                 std::filesystem::remove(temp, ec);
@@ -331,7 +332,7 @@ namespace faceveil
                 return;
             }
 
-            const auto outputRoot = std::filesystem::path(outputDirectory_.toStdString());
+            const auto outputRoot = pathFromQString(outputDirectory_);
             std::error_code mkdirError;
             std::filesystem::create_directories(outputRoot, mkdirError);
             if (mkdirError)
@@ -382,7 +383,7 @@ namespace faceveil
                 {
                     emit logMessage(
                         tr("Skipped unsafe output path for: %1").arg(
-                            QString::fromStdString(source.filename().string())));
+                            pathToQString(source.filename())));
                     ++skippedCount;
                     emit progressChanged(++completed, total);
                     continue;
@@ -394,7 +395,7 @@ namespace faceveil
                 {
                     emit logMessage(
                         tr("Skipped (cannot create parent dir): %1 — %2")
-                        .arg(QString::fromStdString(source.filename().string()),
+                        .arg(pathToQString(source.filename()),
                              QString::fromStdString(parentMkdirError.message())));
                     ++skippedCount;
                     emit progressChanged(++completed, total);
@@ -408,13 +409,13 @@ namespace faceveil
                     emit logMessage(
                         tr("Skipped (file too large, %1 MB): %2")
                         .arg(static_cast<qulonglong>(fileSize >> 20))
-                        .arg(QString::fromStdString(source.filename().string())));
+                        .arg(pathToQString(source.filename())));
                     ++skippedCount;
                     emit progressChanged(++completed, total);
                     continue;
                 }
 
-                const QString fileName = QString::fromStdString(source.filename().string());
+                const QString fileName = pathToQString(source.filename());
                 emit stageChanged(index, total, tr("Loading"), fileName);
 
                 const auto dimensions = inspectImageDimensions(source);
@@ -426,11 +427,11 @@ namespace faceveil
                     continue;
                 }
 
-                cv::Mat image = cv::imread(source.string(), cv::IMREAD_UNCHANGED);
+                cv::Mat image = imreadUnicode(source, cv::IMREAD_UNCHANGED);
                 if (image.empty())
                 {
                     emit logMessage(
-                        tr("Skipped unreadable image: %1").arg(QString::fromStdString(source.string())));
+                        tr("Skipped unreadable image: %1").arg(pathToQString(source)));
                     ++skippedCount;
                     emit progressChanged(++completed, total);
                     continue;
@@ -527,7 +528,7 @@ namespace faceveil
                     continue;
                 }
 
-                const auto encodeParams = encodeParamsForExtension(destination.extension().string());
+                const auto encodeParams = encodeParamsForExtension(pathToUtf8(destination.extension()));
 
                 if (copyOriginalThisImage)
                 {
@@ -549,7 +550,7 @@ namespace faceveil
                     if (!copied)
                     {
                         emit logMessage(tr("Failed to copy: %1").arg(
-                            QString::fromStdString(destination.string())));
+                            pathToQString(destination)));
                         ++failedCount;
                     } else
                     {
@@ -571,7 +572,7 @@ namespace faceveil
                 emit stageChanged(index, total, "Saving", fileName);
                 if (!atomicImwrite(destination, image, encodeParams))
                 {
-                    emit logMessage(tr("Failed to save: %1").arg(QString::fromStdString(destination.string())));
+                    emit logMessage(tr("Failed to save: %1").arg(pathToQString(destination)));
                     ++failedCount;
                 } else
                 {

@@ -1,5 +1,7 @@
 #include "faceveil/ImageScanner.hpp"
 
+#include "faceveil/PathUtil.hpp"
+
 #include <QFileInfo>
 
 #include <algorithm>
@@ -12,7 +14,7 @@ namespace faceveil
     {
         std::string lowercaseExtension(const std::filesystem::path &path)
         {
-            auto extension = path.extension().string();
+            auto extension = pathToUtf8(path.extension());
             for (auto &ch: extension)
             {
                 if (ch >= 'A' && ch <= 'Z')
@@ -71,14 +73,14 @@ namespace faceveil
         {
             std::error_code ec;
             auto canonical = std::filesystem::canonical(file, ec);
-            const auto key = ec ? file.lexically_normal().string() : canonical.string();
+            const auto key = ec ? pathToUtf8(file.lexically_normal()) : pathToUtf8(canonical);
             return visitedCanonical.insert(key).second;
         };
 
         for (const auto &input: inputs)
         {
             const QFileInfo info(input);
-            const auto path = std::filesystem::path(input.toStdString());
+            const auto path = pathFromQString(input);
 
             if (info.isFile())
             {
@@ -128,7 +130,7 @@ namespace faceveil
 
         std::ranges::sort(results, [](const ScanResult &a, const ScanResult &b)
         {
-            return a.sourcePath.string() < b.sourcePath.string();
+            return pathToUtf8(a.sourcePath) < pathToUtf8(b.sourcePath);
         });
 
         return results;

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <limits>
 #include <stdexcept>
+#include <string>
 
 namespace faceveil
 {
@@ -35,7 +36,8 @@ namespace faceveil
     {
         sessionOptions_.SetIntraOpNumThreads(1);
         sessionOptions_.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
-        const std::filesystem::path modelFsPath = modelPath;
+        const std::u8string modelU8(modelPath.begin(), modelPath.end());
+        const std::filesystem::path modelFsPath(modelU8);
         session_ = Ort::Session(env_, modelFsPath.c_str(), sessionOptions_);
 
         Ort::AllocatorWithDefaultOptions allocator;

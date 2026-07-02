@@ -16,6 +16,11 @@ namespace faceveil
 
     cv::Mat toDetectionBgr(const cv::Mat &image);
 
+    cv::Mat imreadUnicode(const std::filesystem::path &source, int flags);
+
+    bool imwriteUnicode(const std::filesystem::path &destination, const cv::Mat &image,
+                        const std::vector<int> &params);
+
     std::vector<int> encodeParamsForExtension(const std::string &extLower);
 
     bool copyMetadata(const std::filesystem::path &source,

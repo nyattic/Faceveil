@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <iterator>
+#include <vector>
 
 #ifdef FACEVEIL_HAVE_EXIV2
 #include <exiv2/exiv2.hpp>
@@ -12,6 +15,15 @@
 
 namespace faceveil
 {
+    namespace
+    {
+        std::string toUtf8(const std::filesystem::path &value)
+        {
+            const auto utf8 = value.u8string();
+            return std::string(utf8.begin(), utf8.end());
+        }
+    }
+
     bool metadataSupportAvailable()
     {
 #ifdef FACEVEIL_HAVE_EXIV2
@@ -26,7 +38,7 @@ namespace faceveil
 #ifdef FACEVEIL_HAVE_EXIV2
         try
         {
-            auto image = Exiv2::ImageFactory::open(source.string());
+            auto image = Exiv2::ImageFactory::open(toUtf8(source));
             image->readMetadata();
             const Exiv2::ExifData &exif = image->exifData();
             const auto it = exif.findKey(Exiv2::ExifKey("Exif.Image.Orientation"));
@@ -115,6 +127,45 @@ namespace faceveil
         return bgr;
     }
 
+    cv::Mat imreadUnicode(const std::filesystem::path &source, int flags)
+    {
+        std::ifstream file(source, std::ios::binary);
+        if (!file)
+        {
+            return {};
+        }
+        std::vector<uchar> buffer((std::istreambuf_iterator<char>(file)),
+                                  std::istreambuf_iterator<char>());
+        if (buffer.empty())
+        {
+            return {};
+        }
+        return cv::imdecode(buffer, flags);
+    }
+
+    bool imwriteUnicode(const std::filesystem::path &destination, const cv::Mat &image,
+                        const std::vector<int> &params)
+    {
+        const auto extension = destination.extension();
+        if (extension.empty())
+        {
+            return false;
+        }
+        std::vector<uchar> buffer;
+        if (!cv::imencode(extension.string(), image, buffer, params))
+        {
+            return false;
+        }
+        std::ofstream file(destination, std::ios::binary | std::ios::trunc);
+        if (!file)
+        {
+            return false;
+        }
+        file.write(reinterpret_cast<const char *>(buffer.data()),
+                   static_cast<std::streamsize>(buffer.size()));
+        return file.good();
+    }
+
     std::vector<int> encodeParamsForExtension(const std::string &extLower)
     {
         std::string ext = extLower;
@@ -153,10 +204,10 @@ namespace faceveil
 #ifdef FACEVEIL_HAVE_EXIV2
         try
         {
-            auto src = Exiv2::ImageFactory::open(source.string());
+            auto src = Exiv2::ImageFactory::open(toUtf8(source));
             src->readMetadata();
 
-            auto dst = Exiv2::ImageFactory::open(destination.string());
+            auto dst = Exiv2::ImageFactory::open(toUtf8(destination));
             dst->readMetadata();
 
             Exiv2::ExifData exif = src->exifData();
