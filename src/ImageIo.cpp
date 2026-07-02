@@ -44,7 +44,11 @@ namespace faceveil
             const auto it = exif.findKey(Exiv2::ExifKey("Exif.Image.Orientation"));
             if (it != exif.end())
             {
+#if EXIV2_TEST_VERSION(0, 28, 0)
                 const auto value = static_cast<int>(it->toInt64());
+#else
+                const auto value = static_cast<int>(it->toLong());
+#endif
                 if (value >= 1 && value <= 8)
                 {
                     return value;
@@ -178,9 +182,14 @@ namespace faceveil
 
         if (ext == "jpg" || ext == "jpeg")
         {
-            return {cv::IMWRITE_JPEG_QUALITY, 100,
-                    cv::IMWRITE_JPEG_SAMPLING_FACTOR, cv::IMWRITE_JPEG_SAMPLING_FACTOR_444,
-                    cv::IMWRITE_JPEG_OPTIMIZE, 1};
+            std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
+#if CV_VERSION_MAJOR > 4 || (CV_VERSION_MAJOR == 4 && CV_VERSION_MINOR >= 7)
+            params.push_back(cv::IMWRITE_JPEG_SAMPLING_FACTOR);
+            params.push_back(cv::IMWRITE_JPEG_SAMPLING_FACTOR_444);
+#endif
+            params.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
+            params.push_back(1);
+            return params;
         }
         if (ext == "webp")
         {
@@ -219,11 +228,20 @@ namespace faceveil
             dst->setIptcData(src->iptcData());
             dst->setXmpData(src->xmpData());
 
+#if EXIV2_TEST_VERSION(0, 28, 0)
             const Exiv2::DataBuf &icc = src->iccProfile();
             if (icc.size() > 0)
             {
                 dst->setIccProfile(Exiv2::DataBuf(icc.c_data(), icc.size()));
             }
+#else
+            const Exiv2::DataBuf *icc = src->iccProfile();
+            if (icc && icc->size_ > 0)
+            {
+                Exiv2::DataBuf iccCopy(icc->pData_, icc->size_);
+                dst->setIccProfile(iccCopy);
+            }
+#endif
 
             dst->writeMetadata();
             return true;
