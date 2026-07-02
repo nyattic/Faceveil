@@ -379,7 +379,7 @@ namespace redactly
                     return;
                 }
                 QPainter painter(viewport());
-                painter.setPen(QColor("#9CA3AF"));
+                painter.setPen(palette().placeholderText().color());
                 painter.drawText(viewport()->rect().adjusted(24, 0, -24, 0),
                                  Qt::AlignCenter | Qt::TextWordWrap, placeholder_);
             }
@@ -455,7 +455,7 @@ namespace redactly
 
         auto *subtitle = new QLabel(header);
         subtitle->setObjectName("subtitleLabel");
-        addRetranslation([this, subtitle]{ subtitle->setText(tr("Local, private face anonymization for photos")); });
+        addRetranslation([subtitle]{ subtitle->setText(tr("Local, private face anonymization for photos")); });
         headerLayout->addLayout(titleRow);
         headerLayout->addWidget(subtitle);
         root->addWidget(header);
@@ -468,11 +468,11 @@ namespace redactly
 
             auto *modelTitle = makeSectionTitle(card);
             cardLayout->addWidget(modelTitle);
-            addRetranslation([this, modelTitle]{ modelTitle->setText(tr("Model")); });
+            addRetranslation([modelTitle]{ modelTitle->setText(tr("Model")); });
 
             auto *modelHint = makeSectionHint(card);
             cardLayout->addWidget(modelHint);
-            addRetranslation([this, modelHint]
+            addRetranslation([modelHint]
                              { modelHint->setText(tr("Choose speed vs. accuracy, or load a custom SCRFD ONNX file.")); });
 
             detectCombo_ = new QComboBox(card);
@@ -509,7 +509,7 @@ namespace redactly
             downloadButton_->setCursor(Qt::PointingHandCursor);
             downloadButton_->setVisible(false);
             auto *modelButton = new QPushButton(card);
-            addRetranslation([this, modelButton]{ modelButton->setText(tr("Browse…")); });
+            addRetranslation([modelButton]{ modelButton->setText(tr("Browse…")); });
             modelButton->setCursor(Qt::PointingHandCursor);
             pathRow->addWidget(modelPathEdit_, 1);
             pathRow->addWidget(downloadButton_);
@@ -532,11 +532,11 @@ namespace redactly
 
             auto *inputsTitle = makeSectionTitle(card);
             cardLayout->addWidget(inputsTitle);
-            addRetranslation([this, inputsTitle]{ inputsTitle->setText(tr("Inputs")); });
+            addRetranslation([inputsTitle]{ inputsTitle->setText(tr("Inputs")); });
 
             auto *inputsHint = makeSectionHint(card);
             cardLayout->addWidget(inputsHint);
-            addRetranslation([this, inputsHint]
+            addRetranslation([inputsHint]
                              { inputsHint->setText(tr("Drag images or folders here, or use the buttons below.")); });
 
             auto *dropList = new DropListWidget(card);
@@ -551,11 +551,11 @@ namespace redactly
             auto *buttonRow = new QHBoxLayout();
             buttonRow->setSpacing(8);
             auto *addFiles = new QPushButton(card);
-            addRetranslation([this, addFiles]{ addFiles->setText(tr("Add Images")); });
+            addRetranslation([addFiles]{ addFiles->setText(tr("Add Images")); });
             auto *addFolder = new QPushButton(card);
-            addRetranslation([this, addFolder]{ addFolder->setText(tr("Add Folder")); });
+            addRetranslation([addFolder]{ addFolder->setText(tr("Add Folder")); });
             auto *clearInputs = new QPushButton(card);
-            addRetranslation([this, clearInputs]{ clearInputs->setText(tr("Clear")); });
+            addRetranslation([clearInputs]{ clearInputs->setText(tr("Clear")); });
             addFiles->setCursor(Qt::PointingHandCursor);
             addFolder->setCursor(Qt::PointingHandCursor);
             clearInputs->setCursor(Qt::PointingHandCursor);
@@ -596,18 +596,18 @@ namespace redactly
 
             auto *outputTitle = makeSectionTitle(card);
             cardLayout->addWidget(outputTitle);
-            addRetranslation([this, outputTitle]{ outputTitle->setText(tr("Output")); });
+            addRetranslation([outputTitle]{ outputTitle->setText(tr("Output")); });
 
             auto *outputHint = makeSectionHint(card);
             cardLayout->addWidget(outputHint);
-            addRetranslation([this, outputHint]
+            addRetranslation([outputHint]
                              { outputHint->setText(tr("Anonymized copies are written here, preserving folder structure.")); });
 
             auto *outputRow = new QHBoxLayout();
             outputRow->setSpacing(8);
             outputDirEdit_ = new QLineEdit(defaultOutputDirectory(), card);
             auto *outputButton = new QPushButton(card);
-            addRetranslation([this, outputButton]{ outputButton->setText(tr("Choose…")); });
+            addRetranslation([outputButton]{ outputButton->setText(tr("Choose…")); });
             outputButton->setCursor(Qt::PointingHandCursor);
             outputRow->addWidget(outputDirEdit_, 1);
             outputRow->addWidget(outputButton);
@@ -651,7 +651,7 @@ namespace redactly
             advancedToggle_->setFocusPolicy(Qt::NoFocus);
 
             auto *resetButton = new QPushButton(card);
-            addRetranslation([this, resetButton]{ resetButton->setText(tr("Reset to defaults")); });
+            addRetranslation([resetButton]{ resetButton->setText(tr("Reset to defaults")); });
             resetButton->setCursor(Qt::PointingHandCursor);
 
             headerRow->addWidget(advancedToggle_);
@@ -666,7 +666,7 @@ namespace redactly
 
             auto *advancedHint = makeSectionHint(advancedBody_);
             bodyLayout->addWidget(advancedHint);
-            addRetranslation([this, advancedHint]
+            addRetranslation([advancedHint]
                              { advancedHint->setText(tr("Tweak detection and mosaic behavior. Defaults work for most photos.")); });
 
             methodCombo_ = new QComboBox(advancedBody_);
@@ -761,22 +761,22 @@ namespace redactly
             grid->setHorizontalSpacing(18);
             grid->setVerticalSpacing(10);
             auto *methodLabel = makeFieldLabel(advancedBody_);
-            addRetranslation([this, methodLabel]{ methodLabel->setText(tr("Anonymization")); });
+            addRetranslation([methodLabel]{ methodLabel->setText(tr("Anonymization")); });
             grid->addRow(methodLabel, methodCombo_);
             auto *shapeLabel = makeFieldLabel(advancedBody_);
-            addRetranslation([this, shapeLabel]{ shapeLabel->setText(tr("Shape")); });
+            addRetranslation([shapeLabel]{ shapeLabel->setText(tr("Shape")); });
             grid->addRow(shapeLabel, shapeCombo_);
             auto *scoreLabel = makeFieldLabel(advancedBody_);
-            addRetranslation([this, scoreLabel]{ scoreLabel->setText(tr("Score threshold")); });
+            addRetranslation([scoreLabel]{ scoreLabel->setText(tr("Score threshold")); });
             grid->addRow(scoreLabel, scoreThresholdSpin_);
             auto *nmsLabel = makeFieldLabel(advancedBody_);
-            addRetranslation([this, nmsLabel]{ nmsLabel->setText(tr("NMS threshold")); });
+            addRetranslation([nmsLabel]{ nmsLabel->setText(tr("NMS threshold")); });
             grid->addRow(nmsLabel, nmsThresholdSpin_);
             auto *blockLabel = makeFieldLabel(advancedBody_);
-            addRetranslation([this, blockLabel]{ blockLabel->setText(tr("Mosaic block size")); });
+            addRetranslation([blockLabel]{ blockLabel->setText(tr("Mosaic block size")); });
             grid->addRow(blockLabel, blockSizeSpin_);
             auto *paddingLabel = makeFieldLabel(advancedBody_);
-            addRetranslation([this, paddingLabel]{ paddingLabel->setText(tr("Face padding")); });
+            addRetranslation([paddingLabel]{ paddingLabel->setText(tr("Face padding")); });
             grid->addRow(paddingLabel, paddingSpin_);
             bodyLayout->addLayout(grid);
 
@@ -797,7 +797,7 @@ namespace redactly
 
             auto *activityTitle = makeSectionTitle(card);
             cardLayout->addWidget(activityTitle);
-            addRetranslation([this, activityTitle]{ activityTitle->setText(tr("Activity")); });
+            addRetranslation([activityTitle]{ activityTitle->setText(tr("Activity")); });
             logEdit_ = new QPlainTextEdit(card);
             logEdit_->setReadOnly(true);
             logEdit_->setMinimumHeight(140);
@@ -1591,7 +1591,7 @@ namespace redactly
         statusLabel_->setProperty("state", "warning");
         statusLabel_->style()->unpolish(statusLabel_);
         statusLabel_->style()->polish(statusLabel_);
-        statusLabel_->setText(message);
+        statusLabel_->setText(QStringLiteral("⚠  ") + message);
         appendLog(message);
 
         if (field != nullptr)

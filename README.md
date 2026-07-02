@@ -33,7 +33,7 @@ Supported inputs: `.jpg` `.jpeg` `.png` `.bmp` `.tif` `.tiff` `.webp`.
 
 ## Build from source
 
-Requires CMake 3.24+, a C++20 compiler, Qt 6 available to CMake (with the Linguist tools for UI translations), OpenCV 4, ONNX Runtime, spdlog, and Exiv2 (optional, for metadata preservation). The detection models (SCRFD for faces, YOLOv9 for license plates) are not build dependencies — the app downloads them on first use, or you can pre-place them (see below).
+Requires CMake 3.24+, a C++20 compiler, Qt 6 available to CMake (with the Linguist tools for UI translations; Qt Svg is optional and gives a crisp settings icon, falling back to a glyph without it), OpenCV 4, ONNX Runtime, spdlog, and Exiv2 (optional, for metadata preservation). The detection models (SCRFD for faces, YOLOv9 for license plates) are not build dependencies — the app downloads them on first use, or you can pre-place them (see below).
 
 The built-in models are **not bundled** and **not committed** to this repository. The app downloads them on first use (with an integrity check) and caches them under the platform data directory. To pre-place them for offline use, drop them in `models/`:
 
@@ -77,7 +77,7 @@ Install the build dependencies (Debian/Ubuntu example):
 
 ```bash
 sudo apt install cmake ninja-build build-essential pkg-config \
-  qt6-base-dev qt6-tools-dev libopencv-dev libspdlog-dev libexiv2-dev
+  qt6-base-dev qt6-tools-dev libqt6svg6-dev libopencv-dev libspdlog-dev libexiv2-dev
 ```
 
 ONNX Runtime is detected via `pkg-config libonnxruntime` when available; otherwise point CMake at an ONNX Runtime release:
