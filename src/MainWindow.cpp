@@ -363,9 +363,18 @@ namespace redactly
 
             QNetworkReply *reply = manager.get(request);
 
+            const qint64 maxBytes = std::max<qint64>(model.approxBytes * 4, 64LL * 1024 * 1024);
+            bool tooLarge = false;
+
             QObject::connect(reply, &QNetworkReply::downloadProgress, &progress,
-                             [&progress](qint64 received, qint64 total)
+                             [&progress, &tooLarge, reply, maxBytes](qint64 received, qint64 total)
                              {
+                                 if (received > maxBytes || (total > 0 && total > maxBytes))
+                                 {
+                                     tooLarge = true;
+                                     reply->abort();
+                                     return;
+                                 }
                                  if (total > 0)
                                  {
                                      progress.setMaximum(100);
@@ -378,6 +387,14 @@ namespace redactly
             QObject::connect(&progress, &QProgressDialog::canceled, reply, &QNetworkReply::abort);
             loop.exec();
             progress.close();
+
+            if (tooLarge)
+            {
+                QMessageBox::warning(parent, QCoreApplication::translate("redactly::MainWindow", "Download Failed"),
+                                     QCoreApplication::translate("redactly::MainWindow",
+                                                                 "The download was much larger than expected and was stopped."));
+                return false;
+            }
 
             if (reply->error() != QNetworkReply::NoError)
             {

@@ -1,6 +1,7 @@
 #include "redactly/ImageIo.hpp"
 #include "redactly/ImageScanner.hpp"
 #include "redactly/Mosaic.hpp"
+#include "redactly/PathSafety.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -128,6 +129,44 @@ namespace
         assert(redactly::encodeParamsForExtension(".bmp").empty());
     }
 
+    void testDestinationPathSafety()
+    {
+        QTemporaryDir temp;
+        assert(temp.isValid());
+        const std::filesystem::path root =
+            std::filesystem::path(temp.path().toStdString()) / "out";
+        assert(std::filesystem::create_directories(root));
+
+        assert(redactly::destinationIsSafe(root / "a.jpg", root));
+        assert(redactly::destinationIsSafe(root / "sub" / "b.png", root));
+        assert(redactly::destinationIsSafe(root, root));
+
+        assert(!redactly::destinationIsSafe(root / ".." / "escape.jpg", root));
+
+        assert(redactly::isWithinRoot(root / "x.jpg", root));
+        assert(!redactly::isWithinRoot(root.parent_path() / "x.jpg", root));
+    }
+
+#ifndef _WIN32
+    void testDestinationRejectsSymlinkEscape()
+    {
+        QTemporaryDir temp;
+        assert(temp.isValid());
+        const std::filesystem::path base = std::filesystem::path(temp.path().toStdString());
+        const std::filesystem::path root = base / "out";
+        const std::filesystem::path outside = base / "outside";
+        assert(std::filesystem::create_directories(root));
+        assert(std::filesystem::create_directories(outside));
+
+        std::error_code ec;
+        const std::filesystem::path link = root / "evil";
+        std::filesystem::create_directory_symlink(outside, link, ec);
+        assert(!ec);
+
+        assert(!redactly::destinationIsSafe(link / "leak.jpg", root));
+    }
+#endif
+
 #ifdef REDACTLY_HAVE_EXIV2
     void testMetadataCopyAndOrientationNormalize()
     {
@@ -175,6 +214,10 @@ int main()
     testApplyMosaicTouchesOnlyDetectedRegion();
     testOrientationTransforms();
     testEncodeParams();
+    testDestinationPathSafety();
+#ifndef _WIN32
+    testDestinationRejectsSymlinkEscape();
+#endif
 #ifdef REDACTLY_HAVE_EXIV2
     testMetadataCopyAndOrientationNormalize();
 #endif

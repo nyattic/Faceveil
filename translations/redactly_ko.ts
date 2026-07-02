@@ -36,6 +36,11 @@
         <translation>다운로드한 모델이 무결성 검사를 통과하지 못해 폐기했습니다.</translation>
     </message>
     <message>
+        <location filename="../src/MainWindow.cpp" line="398"/>
+        <source>The download was much larger than expected and was stopped.</source>
+        <translation>다운로드 용량이 예상보다 훨씬 커서 중단했습니다.</translation>
+    </message>
+    <message>
         <location filename="../src/MainWindow.cpp" line="386"/>
         <location filename="../src/MainWindow.cpp" line="395"/>
         <source>Could not save the model file.</source>
