@@ -12,7 +12,7 @@
 namespace redactly
 {
     SettingsDialog::SettingsDialog(ThemeMode theme, const QString &language, bool checkForUpdates,
-                                   QWidget *parent)
+                                   bool fileLogging, QWidget *parent)
         : QDialog(parent)
     {
         setModal(true);
@@ -50,6 +50,10 @@ namespace redactly
         updateCheck_->setChecked(checkForUpdates);
         root->addWidget(updateCheck_);
 
+        logCheck_ = new QCheckBox(this);
+        logCheck_->setChecked(fileLogging);
+        root->addWidget(logCheck_);
+
         auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
         closeButton_ = buttons->button(QDialogButtonBox::Close);
         closeButton_->setObjectName("primaryButton");
@@ -68,6 +72,10 @@ namespace redactly
         {
             emit checkForUpdatesChanged(enabled);
         });
+        connect(logCheck_, &QCheckBox::toggled, this, [this](bool enabled)
+        {
+            emit fileLoggingChanged(enabled);
+        });
         connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
         retranslate();
@@ -82,6 +90,9 @@ namespace redactly
         themeCombo_->setItemText(1, tr("Light"));
         themeCombo_->setItemText(2, tr("Dark"));
         updateCheck_->setText(tr("Check for updates on startup"));
+        logCheck_->setText(tr("Write a local log file"));
+        logCheck_->setToolTip(tr("The log may include the names of files you process. "
+                                 "Stored on this device only. Takes effect on the next launch."));
         if (closeButton_ != nullptr)
         {
             closeButton_->setText(tr("Close"));

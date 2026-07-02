@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QLabel>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
@@ -364,6 +365,7 @@ namespace redactly
                                const QVector<QRectF> &detected,
                                int currentIndex,
                                int total,
+                               bool preserveMetadata,
                                QWidget *parent)
         : QDialog(parent)
     {
@@ -411,7 +413,9 @@ namespace redactly
         doNotSave->setCursor(Qt::PointingHandCursor);
 
         auto *copyOriginal = new QPushButton(tr("Copy Original"), this);
+        copyOriginal->setObjectName("dangerButton");
         copyOriginal->setCursor(Qt::PointingHandCursor);
+        copyOriginal->setToolTip(tr("Saves the image without anonymizing it."));
 
         auto *save = new QPushButton(tr("Save && Next"), this);
         save->setObjectName("primaryButton");
@@ -439,8 +443,21 @@ namespace redactly
             decision_ = ReviewDecision::DoNotSave;
             accept();
         });
-        connect(copyOriginal, &QPushButton::clicked, this, [this]
+        connect(copyOriginal, &QPushButton::clicked, this, [this, preserveMetadata]
         {
+            const QString detail = preserveMetadata
+                ? tr("The unredacted original will be saved to the output folder, "
+                     "including its original metadata (EXIF, GPS, timestamps).")
+                : tr("The unredacted original will be saved to the output folder "
+                     "(re-encoded without metadata).");
+            const auto answer = QMessageBox::warning(
+                this, tr("Copy Original?"),
+                tr("This image will not be anonymized.\n\n%1\n\nContinue?").arg(detail),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer != QMessageBox::Yes)
+            {
+                return;
+            }
             decision_ = ReviewDecision::CopyOriginal;
             accept();
         });

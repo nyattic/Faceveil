@@ -33,8 +33,9 @@ namespace
             std::vector<spdlog::sink_ptr> sinks;
             sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 
+            const bool fileLogging = QSettings().value("fileLogging", true).toBool();
             const auto dataDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
-            if (!dataDir.isEmpty())
+            if (fileLogging && !dataDir.isEmpty())
             {
                 const auto logDir = dataDir + "/Redactly/logs";
                 if (QDir().mkpath(logDir))

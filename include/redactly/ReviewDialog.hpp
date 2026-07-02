@@ -26,6 +26,7 @@ namespace redactly
                      const QVector<QRectF> &detected,
                      int currentIndex,
                      int total,
+                     bool preserveMetadata,
                      QWidget *parent = nullptr);
 
         [[nodiscard]] ReviewResult result() const;

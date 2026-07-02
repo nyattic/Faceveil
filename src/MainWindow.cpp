@@ -1128,8 +1128,10 @@ namespace redactly
         connect(worker_, &ProcessorWorker::stageChanged, this,
                 [this](int index, int total, const QString &stage, const QString &fileName)
                 {
+                    const QString elided = statusLabel_->fontMetrics().elidedText(
+                        fileName, Qt::ElideMiddle, 320);
                     statusLabel_->setText(QString("%1/%2  ·  %3  ·  %4")
-                        .arg(index).arg(total).arg(stage, fileName));
+                        .arg(index).arg(total).arg(stage, elided));
                 });
 
         connect(worker_, &ProcessorWorker::finished, this, &MainWindow::onWorkerFinished);
@@ -1277,6 +1279,7 @@ namespace redactly
 
         themeMode_ = themeModeFromString(settings.value("theme", "system").toString());
         checkForUpdatesOnStartup_ = settings.value("checkForUpdates", true).toBool();
+        fileLogging_ = settings.value("fileLogging", true).toBool();
 
         const auto savedLanguage = settings.value("language").toString();
         QString language = savedLanguage;
@@ -1325,6 +1328,7 @@ namespace redactly
 
         settings.setValue("theme", themeModeToString(themeMode_));
         settings.setValue("checkForUpdates", checkForUpdatesOnStartup_);
+        settings.setValue("fileLogging", fileLogging_);
 
         settings.setValue("language", language_);
     }
@@ -1354,7 +1358,7 @@ namespace redactly
 
     void MainWindow::openSettings()
     {
-        SettingsDialog dialog(themeMode_, language_, checkForUpdatesOnStartup_, this);
+        SettingsDialog dialog(themeMode_, language_, checkForUpdatesOnStartup_, fileLogging_, this);
 
         connect(&dialog, &SettingsDialog::themeChanged, this, [this](ThemeMode mode)
         {
@@ -1374,6 +1378,11 @@ namespace redactly
         connect(&dialog, &SettingsDialog::checkForUpdatesChanged, this, [this](bool enabled)
         {
             checkForUpdatesOnStartup_ = enabled;
+            saveSettings();
+        });
+        connect(&dialog, &SettingsDialog::fileLoggingChanged, this, [this](bool enabled)
+        {
+            fileLogging_ = enabled;
             saveSettings();
         });
 
@@ -1615,7 +1624,8 @@ namespace redactly
                                            int currentIndex,
                                            int total)
     {
-        ReviewDialog dialog(image, sourceName, detected, currentIndex, total, this);
+        ReviewDialog dialog(image, sourceName, detected, currentIndex, total,
+                            preserveMetaCheck_ != nullptr && preserveMetaCheck_->isChecked(), this);
         dialog.exec();
         return dialog.result();
     }

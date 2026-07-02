@@ -18,7 +18,7 @@ namespace redactly
 
     public:
         SettingsDialog(ThemeMode theme, const QString &language, bool checkForUpdates,
-                       QWidget *parent = nullptr);
+                       bool fileLogging, QWidget *parent = nullptr);
 
     signals:
         void themeChanged(redactly::ThemeMode mode);
@@ -26,6 +26,8 @@ namespace redactly
         void languageChanged(const QString &language);
 
         void checkForUpdatesChanged(bool enabled);
+
+        void fileLoggingChanged(bool enabled);
 
     protected:
         void changeEvent(QEvent *event) override;
@@ -38,6 +40,7 @@ namespace redactly
         QComboBox *themeCombo_ = nullptr;
         QComboBox *languageCombo_ = nullptr;
         QCheckBox *updateCheck_ = nullptr;
+        QCheckBox *logCheck_ = nullptr;
         QPushButton *closeButton_ = nullptr;
     };
 }

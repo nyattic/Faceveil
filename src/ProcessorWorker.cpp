@@ -573,7 +573,7 @@ namespace redactly
                     {
                         emit logMessage(tr("Saved, but could not copy metadata: %1").arg(fileName));
                     }
-                    emit logMessage(tr("Processed %1 face(s): %2")
+                    emit logMessage(tr("Redacted %1 region(s): %2")
                         .arg(static_cast<int>(finalFaces.size()))
                         .arg(fileName));
                     ++anonymizedCount;

@@ -146,6 +146,7 @@ namespace redactly
         QString language_;
         ThemeMode themeMode_ = ThemeMode::System;
         bool checkForUpdatesOnStartup_ = true;
+        bool fileLogging_ = true;
         std::vector<std::function<void()>> retranslators_;
     };
 }

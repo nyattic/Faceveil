@@ -676,8 +676,8 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="552"/>
-        <source>Processed %1 face(s): %2</source>
-        <translation>얼굴 %1개 처리: %2</translation>
+        <source>Redacted %1 region(s): %2</source>
+        <translation>영역 %1개 편집: %2</translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="548"/>
@@ -738,6 +738,34 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <translation>원본 복사</translation>
     </message>
     <message>
+        <source>Saves the image without anonymizing it.</source>
+        <translation>이미지를 익명화하지 않고 저장합니다.</translation>
+    </message>
+    <message>
+        <source>Copy Original?</source>
+        <translation>원본 복사?</translation>
+    </message>
+    <message>
+        <source>This image will not be anonymized.
+
+%1
+
+Continue?</source>
+        <translation>이 이미지는 익명화되지 않습니다.
+
+%1
+
+계속할까요?</translation>
+    </message>
+    <message>
+        <source>The unredacted original will be saved to the output folder, including its original metadata (EXIF, GPS, timestamps).</source>
+        <translation>편집되지 않은 원본이 원본 메타데이터(EXIF, GPS, 촬영 시간)를 포함한 채 출력 폴더에 저장됩니다.</translation>
+    </message>
+    <message>
+        <source>The unredacted original will be saved to the output folder (re-encoded without metadata).</source>
+        <translation>편집되지 않은 원본이 출력 폴더에 저장됩니다(메타데이터 없이 재인코딩됨).</translation>
+    </message>
+    <message>
         <location filename="../src/ReviewDialog.cpp" line="416"/>
         <source>Save &amp;&amp; Next</source>
         <translation>저장 후 다음</translation>
@@ -779,6 +807,14 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <location filename="../src/SettingsDialog.cpp" line="84"/>
         <source>Check for updates on startup</source>
         <translation>시작 시 업데이트 확인</translation>
+    </message>
+    <message>
+        <source>Write a local log file</source>
+        <translation>로컬 로그 파일 기록</translation>
+    </message>
+    <message>
+        <source>The log may include the names of files you process. Stored on this device only. Takes effect on the next launch.</source>
+        <translation>로그에는 처리한 파일 이름이 포함될 수 있습니다. 이 기기에만 저장됩니다. 다음 실행부터 적용됩니다.</translation>
     </message>
     <message>
         <location filename="../src/SettingsDialog.cpp" line="87"/>
