@@ -1,5 +1,6 @@
 #pragma once
 
+#include "redactly/Mosaic.hpp"
 #include "redactly/ReviewTypes.hpp"
 
 #include <QDialog>
@@ -16,6 +17,15 @@ namespace redactly
 {
     class ReviewCanvas;
 
+    struct ReviewPreviewSpec
+    {
+        AnonymizationMethod method = AnonymizationMethod::Mosaic;
+        MaskShape shape = MaskShape::Rectangle;
+        int blockSize = 14;
+        float padding = 0.18F;
+        double previewScale = 1.0;
+    };
+
     class ReviewDialog final : public QDialog
     {
         Q_OBJECT
@@ -27,6 +37,7 @@ namespace redactly
                      int currentIndex,
                      int total,
                      bool preserveMetadata,
+                     const ReviewPreviewSpec &previewSpec,
                      QWidget *parent = nullptr);
 
         [[nodiscard]] ReviewResult result() const;

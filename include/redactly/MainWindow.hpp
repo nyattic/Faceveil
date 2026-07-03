@@ -46,7 +46,8 @@ namespace redactly
                                                          const QString &sourceName,
                                                          const QVector<QRectF> &detected,
                                                          int currentIndex,
-                                                         int total);
+                                                         int total,
+                                                         double previewScale);
 
     protected:
         void dragEnterEvent(QDragEnterEvent *event) override;
@@ -97,6 +98,8 @@ namespace redactly
 
         void updateSettingsIcon() const;
 
+        void updateAnonymizationSample() const;
+
         [[nodiscard]] QStringList inputPaths() const;
 
         void appendLog(const QString &message) const;
@@ -138,6 +141,7 @@ namespace redactly
         QPushButton *stopButton_ = nullptr;
         QPushButton *openOutputButton_ = nullptr;
         QLabel *statusLabel_ = nullptr;
+        QLabel *samplePreview_ = nullptr;
         QToolButton *advancedToggle_ = nullptr;
         QWidget *advancedBody_ = nullptr;
 

@@ -173,7 +173,6 @@ namespace redactly
             QString s = QStringLiteral(R"(
             QWidget {
                 color: @text@;
-                font-size: 13px;
             }
             QMainWindow, #rootScroll, #rootScroll > QWidget > QWidget {
                 background-color: @windowBg@;

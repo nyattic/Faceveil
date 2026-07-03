@@ -135,9 +135,21 @@ Continue?</source>
         <source>Clear All</source>
         <translation>목록 비우기</translation>
     </message>
+    <message numerus="yes">
+        <source>Ignored %n unsupported file(s).</source>
+        <translation><numerusform>지원되지 않는 파일 %n개를 무시했습니다.</numerusform></translation>
+    </message>
     <message>
-        <source>Ignored %1 unsupported file(s).</source>
-        <translation>지원되지 않는 파일 %1개를 무시했습니다.</translation>
+        <source>Preview</source>
+        <translation>미리보기</translation>
+    </message>
+    <message>
+        <source>Anonymization style preview</source>
+        <translation>익명화 스타일 미리보기</translation>
+    </message>
+    <message>
+        <source>Sample of the current anonymization style and block size.</source>
+        <translation>현재 익명화 스타일과 블록 크기를 보여 주는 샘플입니다.</translation>
     </message>
     <message>
         <source>Input images and folders</source>
@@ -617,10 +629,9 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <source>Scanning images...</source>
         <translation>이미지 스캔 중...</translation>
     </message>
-    <message>
-        <location filename="../src/ProcessorWorker.cpp" line="312"/>
-        <source>Preflight: found %1 supported image(s).</source>
-        <translation>사전 점검: 지원되는 이미지 %1개를 찾았습니다.</translation>
+    <message numerus="yes">
+        <source>Preflight: found %n supported image(s).</source>
+        <translation><numerusform>사전 점검: 지원되는 이미지 %n장을 찾았습니다.</numerusform></translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="323"/>
@@ -722,10 +733,9 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <source>Failed to save: %1</source>
         <translation>저장 실패: %1</translation>
     </message>
-    <message>
-        <location filename="../src/ProcessorWorker.cpp" line="552"/>
-        <source>Redacted %1 region(s): %2</source>
-        <translation>영역 %1개 편집: %2</translation>
+    <message numerus="yes">
+        <source>Redacted %n region(s): %1</source>
+        <translation><numerusform>영역 %n개 편집: %1</numerusform></translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="548"/>
@@ -753,9 +763,9 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <source>Summary: %1 anonymized, %2 copied, %3 skipped, %4 failed (of %5).</source>
         <translation>요약: 익명화 %1, 복사 %2, 건너뜀 %3, 실패 %4 (총 %5).</translation>
     </message>
-    <message>
-        <source>Warning: %1 image(s) were saved with no regions redacted. Check them before sharing.</source>
-        <translation>주의: 이미지 %1장이 아무 영역도 가려지지 않은 채 저장되었습니다. 공유하기 전에 확인하세요.</translation>
+    <message numerus="yes">
+        <source>Warning: %n image(s) were saved with no regions redacted. Check them before sharing.</source>
+        <translation><numerusform>주의: 이미지 %n장이 아무 영역도 가려지지 않은 채 저장되었습니다. 공유하기 전에 확인하세요.</numerusform></translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="571"/>
@@ -777,8 +787,8 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="389"/>
-        <source>Click a box to toggle · Drag an empty area to add · Click a blue box to delete · %1 / %2 to undo/redo · Scroll to zoom, right-drag to pan, 0 resets · Esc skips this image without saving</source>
-        <translation>상자를 클릭해 전환 · 빈 영역을 드래그해 추가 · 파란 상자를 클릭해 삭제 · %1 / %2 실행 취소/다시 실행 · 휠 스크롤 확대, 우클릭 드래그 이동, 0 초기화 · Esc는 저장하지 않고 건너뜀</translation>
+        <source>Click or Return toggles a box · Drag an empty area to add · Arrow keys move the selection · Hold Space to preview the result · Scroll to zoom, right-drag to pan, 0 resets · %1 / %2 to undo/redo · Esc skips this image without saving</source>
+        <translation>클릭 또는 Return으로 상자 전환 · 빈 영역을 드래그해 추가 · 화살표 키로 선택 이동 · Space를 누르고 있으면 결과 미리보기 · 휠 스크롤 확대, 우클릭 드래그 이동, 0 초기화 · %1 / %2 실행 취소/다시 실행 · Esc는 저장하지 않고 건너뜀</translation>
     </message>
     <message>
         <source>Review image</source>
@@ -793,13 +803,13 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <source>Cancel All?</source>
         <translation>모두 취소할까요?</translation>
     </message>
-    <message>
-        <source>Stop reviewing and cancel the remaining %1 image(s)?
+    <message numerus="yes">
+        <source>Stop reviewing and cancel the remaining %n image(s)?
 
 Images already saved are kept.</source>
-        <translation>검토를 중단하고 남은 이미지 %1장을 취소할까요?
+        <translation><numerusform>검토를 중단하고 남은 이미지 %n장을 취소할까요?
 
-이미 저장된 이미지는 유지됩니다.</translation>
+이미 저장된 이미지는 유지됩니다.</numerusform></translation>
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="402"/>

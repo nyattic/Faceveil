@@ -300,7 +300,7 @@ namespace redactly
             emit logMessage(tr("Scanning images..."));
             const auto images = scanImages(inputs_, recursive_);
             const int total = static_cast<int>(images.size());
-            emit logMessage(tr("Preflight: found %1 supported image(s).").arg(total));
+            emit logMessage(tr("Preflight: found %n supported image(s).", nullptr, total));
             emit progressChanged(0, total);
 
             if (cancelled_.load(std::memory_order_acquire))
@@ -495,7 +495,8 @@ namespace redactly
                             Q_ARG(QString, fileName),
                             Q_ARG(QVector<QRectF>, detectedRects),
                             Q_ARG(int, index),
-                            Q_ARG(int, total));
+                            Q_ARG(int, total),
+                            Q_ARG(double, previewScale));
 
                         if (!invoked)
                         {
@@ -594,9 +595,10 @@ namespace redactly
                             ++unredactedCount;
                         } else
                         {
-                            emit logMessage(tr("Redacted %1 region(s): %2")
-                                .arg(static_cast<int>(finalFaces.size()))
-                                .arg(fileName));
+                            emit logMessage(
+                                tr("Redacted %n region(s): %1", nullptr,
+                                   static_cast<int>(finalFaces.size()))
+                                    .arg(fileName));
                         }
                         ++anonymizedCount;
                     }
@@ -619,8 +621,8 @@ namespace redactly
             if (unredactedCount > 0)
             {
                 emit logMessage(
-                    tr("Warning: %1 image(s) were saved with no regions redacted. Check them before sharing.")
-                        .arg(unredactedCount));
+                    tr("Warning: %n image(s) were saved with no regions redacted. Check them before sharing.",
+                       nullptr, unredactedCount));
             }
 
             if (cancelled_.load(std::memory_order_acquire))

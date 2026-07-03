@@ -39,8 +39,9 @@ namespace redactly
     class ReviewCanvas final : public QWidget
     {
     public:
-        ReviewCanvas(QImage image, const QVector<QRectF> &detected, QWidget *parent)
-            : QWidget(parent), image_(std::move(image))
+        ReviewCanvas(QImage image, const QVector<QRectF> &detected, ReviewPreviewSpec spec,
+                     QWidget *parent)
+            : QWidget(parent), image_(std::move(image)), spec_(spec)
         {
             setMouseTracking(true);
             setFocusPolicy(Qt::StrongFocus);
@@ -90,6 +91,7 @@ namespace redactly
             boxes_ = undoStack_.back();
             undoStack_.pop_back();
             hoveredIndex_ = -1;
+            clampFocus();
             update();
             emitHistoryChanged();
         }
@@ -104,6 +106,7 @@ namespace redactly
             boxes_ = redoStack_.back();
             redoStack_.pop_back();
             hoveredIndex_ = -1;
+            clampFocus();
             update();
             emitHistoryChanged();
         }
@@ -143,6 +146,13 @@ namespace redactly
             }
 
             const QRectF target = imageTargetRect();
+
+            if (peeking_ && !peekImage_.isNull())
+            {
+                painter.drawImage(target, peekImage_);
+                return;
+            }
+
             painter.drawImage(target, image_);
 
             for (int i = 0; i < boxes_.size(); ++i)
@@ -184,6 +194,13 @@ namespace redactly
                     painter.setPen(QPen(QColor("#FFFFFF"), 1, Qt::DashLine));
                     painter.setBrush(Qt::NoBrush);
                     painter.drawRect(screen.adjusted(-2, -2, 2, 2));
+                }
+
+                if (i == focusedIndex_)
+                {
+                    painter.setPen(QPen(QColor("#FFFFFF"), 2));
+                    painter.setBrush(Qt::NoBrush);
+                    painter.drawRect(screen.adjusted(-4, -4, 4, 4));
                 }
             }
 
@@ -256,17 +273,8 @@ namespace redactly
             const int hit = hitTest(pos);
             if (hit >= 0)
             {
-                pushUndoSnapshot();
-                auto &box = boxes_[hit];
-                if (box.detected)
-                {
-                    box.included = !box.included;
-                }
-                else
-                {
-                    boxes_.remove(hit);
-                }
-                update();
+                focusedIndex_ = hit;
+                activateBox(hit);
                 return;
             }
             if (!imageTargetRect().contains(pos))
@@ -335,12 +343,60 @@ namespace redactly
 
         void keyPressEvent(QKeyEvent *event) override
         {
-            if (event->key() == Qt::Key_0 || event->key() == Qt::Key_F)
+            switch (event->key())
             {
-                resetView();
-                return;
+                case Qt::Key_Space:
+                    if (!event->isAutoRepeat())
+                    {
+                        peeking_ = true;
+                        peekImage_ = renderPeek();
+                        update();
+                    }
+                    return;
+                case Qt::Key_0:
+                case Qt::Key_F:
+                    resetView();
+                    return;
+                case Qt::Key_Left:
+                case Qt::Key_Up:
+                    moveFocus(-1);
+                    return;
+                case Qt::Key_Right:
+                case Qt::Key_Down:
+                    moveFocus(1);
+                    return;
+                case Qt::Key_Return:
+                case Qt::Key_Enter:
+                    if (focusedIndex_ >= 0)
+                    {
+                        activateBox(focusedIndex_);
+                        return;
+                    }
+                    break;
+                case Qt::Key_Delete:
+                case Qt::Key_Backspace:
+                    if (focusedIndex_ >= 0)
+                    {
+                        excludeBox(focusedIndex_);
+                        return;
+                    }
+                    break;
+                default:
+                    break;
             }
             QWidget::keyPressEvent(event);
+        }
+
+        void keyReleaseEvent(QKeyEvent *event) override
+        {
+            if (event->key() == Qt::Key_Space && !event->isAutoRepeat())
+            {
+                peeking_ = false;
+                peekImage_ = QImage();
+                update();
+                return;
+            }
+            QWidget::keyReleaseEvent(event);
         }
 
     private:
@@ -363,6 +419,106 @@ namespace redactly
             const qreal maxY = std::max(0.0, (scaled.height() - height()) / 2.0 + 60.0);
             pan_.setX(std::clamp(pan_.x(), -maxX, maxX));
             pan_.setY(std::clamp(pan_.y(), -maxY, maxY));
+        }
+
+        void clampFocus()
+        {
+            if (focusedIndex_ >= boxes_.size())
+            {
+                focusedIndex_ = boxes_.size() - 1;
+            }
+        }
+
+        void moveFocus(int delta)
+        {
+            if (boxes_.isEmpty())
+            {
+                focusedIndex_ = -1;
+                update();
+                return;
+            }
+            if (focusedIndex_ < 0)
+            {
+                focusedIndex_ = delta > 0 ? 0 : boxes_.size() - 1;
+            }
+            else
+            {
+                focusedIndex_ = (focusedIndex_ + delta + boxes_.size()) % boxes_.size();
+            }
+            update();
+        }
+
+        void activateBox(int index)
+        {
+            if (index < 0 || index >= boxes_.size())
+            {
+                return;
+            }
+            pushUndoSnapshot();
+            auto &box = boxes_[index];
+            if (box.detected)
+            {
+                box.included = !box.included;
+            }
+            else
+            {
+                boxes_.remove(index);
+                clampFocus();
+            }
+            hoveredIndex_ = -1;
+            update();
+        }
+
+        void excludeBox(int index)
+        {
+            if (index < 0 || index >= boxes_.size())
+            {
+                return;
+            }
+            if (boxes_[index].detected && !boxes_[index].included)
+            {
+                return;
+            }
+            pushUndoSnapshot();
+            auto &box = boxes_[index];
+            if (box.detected)
+            {
+                box.included = false;
+            }
+            else
+            {
+                boxes_.remove(index);
+                clampFocus();
+            }
+            hoveredIndex_ = -1;
+            update();
+        }
+
+        [[nodiscard]] QImage renderPeek() const
+        {
+            QImage base = image_.convertToFormat(QImage::Format_BGR888);
+            if (base.isNull())
+            {
+                return {};
+            }
+            cv::Mat mat(base.height(), base.width(), CV_8UC3,
+                        base.bits(), static_cast<size_t>(base.bytesPerLine()));
+            FaceDetections detections;
+            for (const auto &rect: finalBoxes())
+            {
+                FaceDetection det;
+                det.box = cv::Rect2f(static_cast<float>(rect.x()),
+                                     static_cast<float>(rect.y()),
+                                     static_cast<float>(rect.width()),
+                                     static_cast<float>(rect.height()));
+                det.score = 1.0F;
+                detections.push_back(det);
+            }
+            const int blockSize = std::max(
+                2, static_cast<int>(std::round(spec_.blockSize * spec_.previewScale)));
+            applyAnonymization(mat, detections, spec_.method, blockSize, spec_.padding,
+                               spec_.shape);
+            return base;
         }
 
         [[nodiscard]] QSize fitSize(QSize source) const
@@ -444,8 +600,10 @@ namespace redactly
         static constexpr std::size_t kMaxUndo = 64;
 
         QImage image_;
+        ReviewPreviewSpec spec_;
         QVector<Box> boxes_;
         int hoveredIndex_ = -1;
+        int focusedIndex_ = -1;
         bool drawing_ = false;
         QPointF dragStart_;
         QPointF dragCurrent_;
@@ -454,6 +612,8 @@ namespace redactly
         bool panning_ = false;
         QPointF panStart_;
         QPointF panOrigin_;
+        bool peeking_ = false;
+        QImage peekImage_;
         std::vector<QVector<Box>> undoStack_;
         std::vector<QVector<Box>> redoStack_;
         std::function<void()> historyChanged_;
@@ -465,6 +625,7 @@ namespace redactly
                                int currentIndex,
                                int total,
                                bool preserveMetadata,
+                               const ReviewPreviewSpec &previewSpec,
                                QWidget *parent)
         : QDialog(parent)
     {
@@ -484,15 +645,16 @@ namespace redactly
         header->setTextFormat(Qt::RichText);
         root->addWidget(header);
 
-        canvas_ = new ReviewCanvas(image, detected, this);
+        canvas_ = new ReviewCanvas(image, detected, previewSpec, this);
         canvas_->setStyleSheet("background-color: #111827; border-radius: 8px;");
         canvas_->setAccessibleName(tr("Review image"));
+        canvas_->setFocus(Qt::OtherFocusReason);
         root->addWidget(canvas_, 1);
 
         hintLabel_ = new QLabel(
-            tr("Click a box to toggle · Drag an empty area to add · "
-               "Click a blue box to delete · %1 / %2 to undo/redo · "
-               "Scroll to zoom, right-drag to pan, 0 resets · "
+            tr("Click or Return toggles a box · Drag an empty area to add · "
+               "Arrow keys move the selection · Hold Space to preview the result · "
+               "Scroll to zoom, right-drag to pan, 0 resets · %1 / %2 to undo/redo · "
                "Esc skips this image without saving")
                 .arg(QKeySequence(QKeySequence::Undo).toString(QKeySequence::NativeText),
                      QKeySequence(QKeySequence::Redo).toString(QKeySequence::NativeText)), this);
@@ -541,8 +703,8 @@ namespace redactly
             const int remaining = total - currentIndex + 1;
             const auto answer = QMessageBox::question(
                 this, tr("Cancel All?"),
-                tr("Stop reviewing and cancel the remaining %1 image(s)?\n\n"
-                   "Images already saved are kept.").arg(remaining),
+                tr("Stop reviewing and cancel the remaining %n image(s)?\n\n"
+                   "Images already saved are kept.", nullptr, remaining),
                 QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
             if (answer != QMessageBox::Yes)
             {

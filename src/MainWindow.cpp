@@ -1,6 +1,7 @@
 #include "redactly/MainWindow.hpp"
 
 #include "redactly/ImageScanner.hpp"
+#include "redactly/Mosaic.hpp"
 #include "redactly/PathUtil.hpp"
 #include "redactly/PlateDetector.hpp"
 #include "redactly/ProcessorWorker.hpp"
@@ -48,6 +49,7 @@
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
+#include <QImageReader>
 #include <QLibraryInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -55,13 +57,16 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QProgressDialog>
+#include <QScreen>
 #include <QStyle>
 #include <QStyleHints>
 #include <QTimer>
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 
 namespace redactly
 {
@@ -367,6 +372,45 @@ namespace redactly
             return card;
         }
 
+        QPixmap anonymizationSamplePixmap(AnonymizationMethod method, MaskShape shape,
+                                          int blockSize, float padding)
+        {
+            qreal dpr = 1.0;
+            for (const QScreen *screen: QGuiApplication::screens())
+            {
+                dpr = std::max(dpr, screen->devicePixelRatio());
+            }
+            const int w = static_cast<int>(std::lround(152 * dpr));
+            const int h = static_cast<int>(std::lround(96 * dpr));
+
+            cv::Mat sample(h, w, CV_8UC3);
+            const int cell = std::max(2, static_cast<int>(std::lround(6 * dpr)));
+            for (int y = 0; y < h; ++y)
+            {
+                for (int x = 0; x < w; ++x)
+                {
+                    const bool checker = ((x / cell) + (y / cell)) % 2 == 0;
+                    const int base = checker ? 205 : 150;
+                    sample.at<cv::Vec3b>(y, x) = cv::Vec3b(
+                        static_cast<uchar>(std::clamp(base - (y * 60) / h, 0, 255)),
+                        static_cast<uchar>(std::clamp(base - 40 + (x * 70) / w, 0, 255)),
+                        static_cast<uchar>(std::clamp(base + (y * 40) / h - 20, 0, 255)));
+                }
+            }
+
+            FaceDetections detections;
+            detections.push_back({cv::Rect2f(w * 0.3F, h * 0.2F, w * 0.4F, h * 0.6F), 1.0F});
+            applyAnonymization(sample, detections, method,
+                               std::max(2, static_cast<int>(std::lround(blockSize * dpr))),
+                               padding, shape);
+
+            const QImage image(sample.data, sample.cols, sample.rows,
+                               static_cast<int>(sample.step), QImage::Format_BGR888);
+            QPixmap pixmap = QPixmap::fromImage(image.copy());
+            pixmap.setDevicePixelRatio(dpr);
+            return pixmap;
+        }
+
         class DropListWidget final : public QListWidget
         {
         public:
@@ -596,6 +640,7 @@ namespace redactly
             inputList_->setSelectionMode(QAbstractItemView::ExtendedSelection);
             inputList_->setMinimumHeight(140);
             inputList_->setAlternatingRowColors(false);
+            inputList_->setIconSize(QSize(40, 40));
             addRetranslation([this, dropList]
                              {
                                  dropList->setPlaceholderText(tr("Drop images or folders here"));
@@ -833,6 +878,18 @@ namespace redactly
             auto *paddingLabel = makeFieldLabel(advancedBody_);
             addRetranslation([paddingLabel]{ paddingLabel->setText(tr("Face padding")); });
             grid->addRow(paddingLabel, paddingSpin_);
+
+            samplePreview_ = new QLabel(advancedBody_);
+            samplePreview_->setFixedSize(152, 96);
+            addRetranslation([this]
+                             {
+                                 samplePreview_->setAccessibleName(tr("Anonymization style preview"));
+                                 samplePreview_->setToolTip(tr(
+                                     "Sample of the current anonymization style and block size."));
+                             });
+            auto *sampleLabel = makeFieldLabel(advancedBody_);
+            addRetranslation([sampleLabel]{ sampleLabel->setText(tr("Preview")); });
+            grid->addRow(sampleLabel, samplePreview_);
             bodyLayout->addLayout(grid);
 
             advancedBody_->setVisible(false);
@@ -840,6 +897,15 @@ namespace redactly
 
             connect(advancedToggle_, &QToolButton::toggled, this, &MainWindow::toggleAdvanced);
             connect(resetButton, &QPushButton::clicked, this, &MainWindow::resetAdvancedDefaults);
+            connect(methodCombo_, &QComboBox::currentIndexChanged, this,
+                    [this]{ updateAnonymizationSample(); });
+            connect(shapeCombo_, &QComboBox::currentIndexChanged, this,
+                    [this]{ updateAnonymizationSample(); });
+            connect(blockSizeSpin_, &QSpinBox::valueChanged, this,
+                    [this]{ updateAnonymizationSample(); });
+            connect(paddingSpin_, &QDoubleSpinBox::valueChanged, this,
+                    [this]{ updateAnonymizationSample(); });
+            updateAnonymizationSample();
 
             root->addWidget(card);
         }
@@ -1040,7 +1106,7 @@ namespace redactly
         }
         if (unsupportedCount > 0)
         {
-            appendLog(tr("Ignored %1 unsupported file(s).").arg(unsupportedCount));
+            appendLog(tr("Ignored %n unsupported file(s).", nullptr, unsupportedCount));
         }
         event->acceptProposedAction();
     }
@@ -1520,6 +1586,19 @@ namespace redactly
         dialog.exec();
     }
 
+    void MainWindow::updateAnonymizationSample() const
+    {
+        if (samplePreview_ == nullptr)
+        {
+            return;
+        }
+        samplePreview_->setPixmap(anonymizationSamplePixmap(
+            static_cast<AnonymizationMethod>(methodCombo_->currentData().toInt()),
+            static_cast<MaskShape>(shapeCombo_->currentData().toInt()),
+            blockSizeSpin_->value(),
+            static_cast<float>(paddingSpin_->value())));
+    }
+
     void MainWindow::updateSettingsIcon() const
     {
         if (settingsButton_ == nullptr)
@@ -1562,7 +1641,28 @@ namespace redactly
                 return;
             }
         }
-        inputList_->addItem(path);
+
+        auto *item = new QListWidgetItem(path);
+        if (info.isDir())
+        {
+            item->setIcon(style()->standardIcon(QStyle::SP_DirIcon));
+        }
+        else
+        {
+            QImageReader reader(path);
+            reader.setAutoTransform(true);
+            QSize thumbSize = reader.size();
+            if (thumbSize.isValid())
+            {
+                thumbSize.scale(40, 40, Qt::KeepAspectRatio);
+                reader.setScaledSize(thumbSize);
+            }
+            const QImage thumb = reader.read();
+            item->setIcon(thumb.isNull()
+                              ? style()->standardIcon(QStyle::SP_FileIcon)
+                              : QIcon(QPixmap::fromImage(thumb)));
+        }
+        inputList_->addItem(item);
     }
 
     void MainWindow::setProcessing(bool processing) const
@@ -1777,7 +1877,8 @@ namespace redactly
                                            const QString &sourceName,
                                            const QVector<QRectF> &detected,
                                            int currentIndex,
-                                           int total)
+                                           int total,
+                                           double previewScale)
     {
         if (shuttingDown_)
         {
@@ -1785,8 +1886,15 @@ namespace redactly
             cancelAll.decision = ReviewDecision::CancelAll;
             return cancelAll;
         }
+        ReviewPreviewSpec spec;
+        spec.method = static_cast<AnonymizationMethod>(methodCombo_->currentData().toInt());
+        spec.shape = static_cast<MaskShape>(shapeCombo_->currentData().toInt());
+        spec.blockSize = blockSizeSpin_->value();
+        spec.padding = static_cast<float>(paddingSpin_->value());
+        spec.previewScale = previewScale;
         ReviewDialog dialog(image, sourceName, detected, currentIndex, total,
-                            preserveMetaCheck_ != nullptr && preserveMetaCheck_->isChecked(), this);
+                            preserveMetaCheck_ != nullptr && preserveMetaCheck_->isChecked(),
+                            spec, this);
         dialog.exec();
         return dialog.result();
     }

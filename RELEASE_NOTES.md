@@ -19,17 +19,21 @@ skipped instead of being overwritten in place.
 In the review dialog, Esc (or closing the window) now skips just the current
 image instead of cancelling the whole batch, **Cancel All** asks for
 confirmation first, and the preview supports scroll-to-zoom and right-drag
-panning so small faces in large photos can be adjusted precisely. Korean users
-get localized Yes/No dialog buttons and the previously untranslated
-license-plate download prompt. Each release now ships a `SHA256SUMS` file so
-downloads can be verified.
+panning so small faces in large photos can be adjusted precisely. Review also
+works fully from the keyboard — arrow keys select a box, Return toggles it,
+Delete excludes it — and holding **Space** previews the anonymized result
+before saving. Korean users get localized Yes/No dialog buttons and the
+previously untranslated license-plate download prompt. Each release now ships
+a `SHA256SUMS` file so downloads can be verified.
 
-Quality-of-life improvements: selected inputs can be removed with Delete or a
-right-click menu, unsupported files are filtered out at drop time and the list
-highlights while dragging, an **Open Output Folder** button and the elapsed
-time appear when a run finishes, and the Settings button and Advanced Options
-toggle are now reachable by keyboard (Settings also via the standard
-Preferences shortcut).
+Quality-of-life improvements: input rows show thumbnails and selected entries
+can be removed with Delete or a right-click menu, unsupported files are
+filtered out at drop time and the list highlights while dragging, Advanced
+Options shows a live sample of the chosen anonymization style, an **Open
+Output Folder** button and the elapsed time appear when a run finishes, the
+Settings button and Advanced Options toggle are reachable by keyboard
+(Settings also via the standard Preferences shortcut), and the app follows
+the system font size.
 
 ---
 
