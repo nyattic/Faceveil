@@ -394,7 +394,7 @@ namespace redactly
             auto *buttonRow = new QHBoxLayout();
             buttonRow->setSpacing(8);
             auto *addFiles = new QPushButton(card);
-            addRetranslation([addFiles]{ addFiles->setText(tr("Add Images")); });
+            addRetranslation([addFiles]{ addFiles->setText(tr("Add Files")); });
             auto *addFolder = new QPushButton(card);
             addRetranslation([addFolder]{ addFolder->setText(tr("Add Folder")); });
             auto *clearInputs = new QPushButton(card);

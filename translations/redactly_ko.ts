@@ -209,8 +209,8 @@ Continue?</source>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="621"/>
-        <source>Add Images</source>
-        <translation>이미지 추가</translation>
+        <source>Add Files</source>
+        <translation>파일 추가</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="623"/>
