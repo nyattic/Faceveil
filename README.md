@@ -29,7 +29,7 @@ Originals are never modified. Enable **Review each image** to inspect detections
 
 Redactly refuses to start if two inputs would write to the same output path, so existing results are not silently overwritten.
 
-Supported inputs: `.jpg` `.jpeg` `.png` `.bmp` `.tif` `.tiff` `.webp` images, and `.mp4` `.mov` `.m4v` videos (H.264/HEVC, 8-bit SDR). Video support is currently in **beta** — check the output before sharing it.
+Supported inputs: `.jpg` `.jpeg` `.png` `.bmp` `.tif` `.tiff` `.webp` images, and `.mp4` `.mov` `.m4v` videos (H.264/HEVC, 8-bit SDR). Video support is currently in **beta** — check the output before sharing it. On Linux the video pipeline is covered by automated tests but has not been manually tested yet.
 
 Videos are processed in two passes — detection with bidirectional tracking, then encoding — so faces stay covered through motion blur and brief occlusions. Output is always H.264 MP4 with the original audio (re-encoded to AAC only when the source codec doesn't fit MP4), container metadata removed, and rotation baked into the pixels. Variable frame rate input is converted to a constant frame rate; 10-bit/HDR input is rejected rather than silently degraded. Video processing uses an FFmpeg bundled next to the app when present, otherwise an FFmpeg found on `PATH`. Videos are processed without the review step, and the video quality preset lives in Settings.
 

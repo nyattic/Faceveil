@@ -17,7 +17,8 @@ Video support is a beta: detection coverage and processing speed are still
 being validated across a wider range of real-world footage, so check the
 output before sharing it — every video is listed in the end-of-run summary,
 and one in which nothing was detected is called out explicitly, same as
-photos.
+photos. On Linux the video pipeline has only been exercised by automated
+tests so far, not by hand.
 
 Video processing uses the FFmpeg bundled with the app, or an FFmpeg found on
 `PATH`. Known limits in this release: variable-frame-rate input is converted
