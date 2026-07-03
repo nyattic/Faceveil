@@ -103,6 +103,7 @@ qt_add_executable(Redactly ${REDACTLY_APP_OPTIONS}
     src/ScrfdFaceDetector.cpp
     src/SettingsDialog.cpp
     src/Theme.cpp
+    src/Tracking.cpp
     src/UpdateChecker.cpp
     include/redactly/DetectionGeometry.hpp
     include/redactly/Detector.hpp
@@ -120,6 +121,7 @@ qt_add_executable(Redactly ${REDACTLY_APP_OPTIONS}
     include/redactly/ScrfdFaceDetector.hpp
     include/redactly/SettingsDialog.hpp
     include/redactly/Theme.hpp
+    include/redactly/Tracking.hpp
     include/redactly/UpdateChecker.hpp
     ${REDACTLY_APP_RESOURCES}
 )
@@ -252,4 +254,18 @@ if(BUILD_TESTING)
         target_compile_definitions(redactly_tests PRIVATE REDACTLY_HAVE_EXIV2)
     endif()
     add_test(NAME redactly_tests COMMAND redactly_tests)
+
+    add_executable(redactly_tracking_tests
+        tests/test_tracking.cpp
+        src/Tracking.cpp
+        include/redactly/Tracking.hpp
+    )
+    target_include_directories(redactly_tracking_tests PRIVATE include)
+    if(MSVC)
+        target_compile_options(redactly_tracking_tests PRIVATE /UNDEBUG)
+    else()
+        target_compile_options(redactly_tracking_tests PRIVATE -UNDEBUG)
+    endif()
+    target_link_libraries(redactly_tracking_tests PRIVATE ${OpenCV_LIBS})
+    add_test(NAME redactly_tracking_tests COMMAND redactly_tracking_tests)
 endif()
