@@ -2,6 +2,7 @@
 
 #include "redactly/ImageIo.hpp"
 #include "redactly/ImageScanner.hpp"
+#include "redactly/OrderedParallel.hpp"
 #include "redactly/PathSafety.hpp"
 #include "redactly/PathUtil.hpp"
 #include "redactly/PlateDetector.hpp"
@@ -25,6 +26,7 @@
 #include <filesystem>
 #include <random>
 #include <system_error>
+#include <thread>
 #include <unordered_map>
 
 namespace redactly
@@ -215,6 +217,17 @@ namespace redactly
         }
     }
 
+    struct ProcessorWorker::ItemOutcome
+    {
+        QStringList logs;
+        int anonymized = 0;
+        int copied = 0;
+        int skipped = 0;
+        int failed = 0;
+        int unredacted = 0;
+        bool cancelled = false;
+    };
+
     ProcessorWorker::ProcessorWorker(QString modelPath,
                                      QStringList inputs,
                                      QString outputDirectory,
@@ -356,272 +369,63 @@ namespace redactly
             emit logMessage(tr("Preflight: output paths are unique."));
 
             int completed = 0;
-            int index = 0;
             int anonymizedCount = 0;
             int copiedCount = 0;
             int skippedCount = 0;
             int failedCount = 0;
             int unredactedCount = 0;
-            for (const auto &item: images)
+
+            const auto applyOutcome = [&](ItemOutcome &&outcome)
             {
-                ++index;
-                if (cancelled_.load(std::memory_order_acquire))
+                for (const auto &message: outcome.logs)
                 {
-                    break;
+                    emit logMessage(message);
                 }
-
-                try
+                anonymizedCount += outcome.anonymized;
+                copiedCount += outcome.copied;
+                skippedCount += outcome.skipped;
+                failedCount += outcome.failed;
+                unredactedCount += outcome.unredacted;
+                if (!outcome.cancelled)
                 {
-                    const auto source = item.sourcePath;
-                    const auto destination = (safeRoot / item.relativePath).lexically_normal();
-
-                    if (!destinationIsSafe(destination, safeRoot))
-                    {
-                        emit logMessage(
-                            tr("Skipped unsafe output path for: %1").arg(
-                                pathToQString(source.filename())));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    std::error_code sameFileError;
-                    if (std::filesystem::exists(destination, sameFileError) &&
-                        std::filesystem::equivalent(source, destination, sameFileError))
-                    {
-                        emit logMessage(
-                            tr("Skipped (source and destination are the same file): %1")
-                            .arg(pathToQString(source.filename())));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    std::error_code parentMkdirError;
-                    std::filesystem::create_directories(destination.parent_path(), parentMkdirError);
-                    if (parentMkdirError)
-                    {
-                        emit logMessage(
-                            tr("Skipped (cannot create parent dir): %1 — %2")
-                            .arg(pathToQString(source.filename()),
-                                 QString::fromStdString(parentMkdirError.message())));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    std::error_code sizeError;
-                    const auto fileSize = std::filesystem::file_size(source, sizeError);
-                    if (!sizeError && fileSize > kMaxInputFileBytes)
-                    {
-                        emit logMessage(
-                            tr("Skipped (file too large, %1 MB): %2")
-                            .arg(static_cast<qulonglong>(fileSize >> 20))
-                            .arg(pathToQString(source.filename())));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    const QString fileName = pathToQString(source.filename());
-                    emit stageChanged(index, total, tr("Loading"), fileName);
-
-                    const auto dimensions = inspectImageDimensions(source);
-                    if (!dimensions.ok)
-                    {
-                        emit logMessage(tr("Skipped (%1): %2").arg(dimensions.reason, fileName));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    cv::Mat image = imreadUnicode(source, cv::IMREAD_UNCHANGED);
-                    if (image.empty())
-                    {
-                        emit logMessage(
-                            tr("Skipped unreadable image: %1").arg(pathToQString(source)));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    applyOrientation(image, readExifOrientation(source));
-
-                    if (cancelled_.load(std::memory_order_acquire))
-                    {
-                        break;
-                    }
-
-                    const long long pixelCount =
-                            static_cast<long long>(image.cols) * static_cast<long long>(image.rows);
-                    if (pixelCount > kMaxPixelCount)
-                    {
-                        emit logMessage(
-                            tr("Skipped (image too large, %1 × %2): %3")
-                            .arg(image.cols).arg(image.rows)
-                            .arg(fileName));
-                        image.release();
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    const cv::Mat detectMat = toDetectionBgr(image);
-
-                    emit stageChanged(index, total, tr("Detecting"), fileName);
-                    FaceDetections detected;
-                    if (detector_)
-                    {
-                        detected = detector_->detect(detectMat, scoreThreshold_, nmsThreshold_);
-                    }
-                    if (plateDetector_)
-                    {
-                        const auto plates = plateDetector_->detect(detectMat, scoreThreshold_, nmsThreshold_);
-                        detected.insert(detected.end(), plates.begin(), plates.end());
-                    }
-                    if (cancelled_.load(std::memory_order_acquire))
-                    {
-                        break;
-                    }
-                    FaceDetections finalFaces = detected;
-                    bool doNotSaveThisImage = false;
-                    bool copyOriginalThisImage = false;
-
-                    if (reviewEnabled_ && reviewReceiver_)
-                    {
-                        emit stageChanged(index, total, tr("Reviewing"), fileName);
-
-                        auto [preview, previewScale] = makeReviewPreview(detectMat);
-                        const QVector<QRectF> detectedRects = scaleRects(toQRects(detected), previewScale);
-
-                        ReviewResult reviewResult;
-                        const bool invoked = QMetaObject::invokeMethod(
-                            reviewReceiver_.data(),
-                            "requestReview",
-                            Qt::BlockingQueuedConnection,
-                            Q_RETURN_ARG(redactly::ReviewResult, reviewResult),
-                            Q_ARG(QImage, preview),
-                            Q_ARG(QString, fileName),
-                            Q_ARG(QVector<QRectF>, detectedRects),
-                            Q_ARG(int, index),
-                            Q_ARG(int, total),
-                            Q_ARG(double, previewScale));
-
-                        if (!invoked)
-                        {
-                            emit logMessage(tr("Review bridge unavailable; saved without review."));
-                        } else
-                        {
-                            switch (reviewResult.decision)
-                            {
-                                case ReviewDecision::CancelAll:
-                                    cancelled_.store(true, std::memory_order_release);
-                                    break;
-                                case ReviewDecision::DoNotSave:
-                                    doNotSaveThisImage = true;
-                                    break;
-                                case ReviewDecision::CopyOriginal:
-                                    copyOriginalThisImage = true;
-                                    break;
-                                case ReviewDecision::Save:
-
-                                    finalFaces = toDetections(
-                                        scaleRects(reviewResult.finalBoxes,
-                                                   previewScale != 0.0 ? 1.0 / previewScale : 1.0));
-                                    break;
-                            }
-                        }
-                    }
-
-                    if (cancelled_.load(std::memory_order_acquire))
-                    {
-                        break;
-                    }
-
-                    if (doNotSaveThisImage)
-                    {
-                        emit logMessage(tr("Skipped without saving: %1").arg(fileName));
-                        ++skippedCount;
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    const auto encodeParams = encodeParamsForExtension(pathToUtf8(destination.extension()));
-
-                    if (copyOriginalThisImage)
-                    {
-                        emit stageChanged(index, total, tr("Saving"), fileName);
-                        bool copied = false;
-                        if (preserveMetadata_)
-                        {
-                            std::error_code copyError;
-                            std::filesystem::copy_file(source, destination,
-                                                       std::filesystem::copy_options::overwrite_existing,
-                                                       copyError);
-                            copied = !copyError;
-                        }
-                        else
-                        {
-                            copied = atomicImwrite(destination, image, encodeParams);
-                        }
-
-                        if (!copied)
-                        {
-                            emit logMessage(tr("Failed to copy: %1").arg(
-                                pathToQString(destination)));
-                            ++failedCount;
-                        } else
-                        {
-                            emit logMessage(tr("Skipped (original copied): %1").arg(fileName));
-                            ++copiedCount;
-                        }
-                        emit progressChanged(++completed, total);
-                        continue;
-                    }
-
-                    emit stageChanged(index, total, tr("Applying mosaic"), fileName);
-                    applyAnonymization(image, finalFaces, method_, mosaicBlockSize_, paddingRatio_,
-                                       shape_, softEdges_);
-
-                    if (cancelled_.load(std::memory_order_acquire))
-                    {
-                        break;
-                    }
-
-                    emit stageChanged(index, total, tr("Saving"), fileName);
-                    if (!atomicImwrite(destination, image, encodeParams))
-                    {
-                        emit logMessage(tr("Failed to save: %1").arg(pathToQString(destination)));
-                        ++failedCount;
-                    } else
-                    {
-                        if (preserveMetadata_ && !copyMetadata(source, destination, true))
-                        {
-                            emit logMessage(tr("Saved, but could not copy metadata: %1").arg(fileName));
-                        }
-                        if (finalFaces.empty())
-                        {
-                            emit logMessage(tr("Saved with no regions redacted: %1").arg(fileName));
-                            ++unredactedCount;
-                        } else
-                        {
-                            emit logMessage(
-                                tr("Redacted %n region(s): %1", nullptr,
-                                   static_cast<int>(finalFaces.size()))
-                                    .arg(fileName));
-                        }
-                        ++anonymizedCount;
-                    }
-
-                    emit progressChanged(++completed, total);
-                } catch (const std::exception &exception)
-                {
-                    emit logMessage(tr("Error processing %1: %2")
-                        .arg(pathToQString(item.sourcePath.filename()),
-                             QString::fromUtf8(exception.what())));
-                    ++failedCount;
                     emit progressChanged(++completed, total);
                 }
+            };
+
+            if (reviewEnabled_ && reviewReceiver_)
+            {
+                int index = 0;
+                for (const auto &item: images)
+                {
+                    ++index;
+                    if (cancelled_.load(std::memory_order_acquire))
+                    {
+                        break;
+                    }
+                    auto outcome = processItem(item, safeRoot, index, total, true);
+                    const bool stop = outcome.cancelled;
+                    applyOutcome(std::move(outcome));
+                    if (stop)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                const unsigned threadCount =
+                        std::min(4U, std::max(1U, std::thread::hardware_concurrency()));
+                processOrdered<ItemOutcome>(
+                    images.size(), threadCount, threadCount, cancelled_,
+                    [&](std::size_t i)
+                    {
+                        return processItem(images[i], safeRoot,
+                                           static_cast<int>(i) + 1, total, false);
+                    },
+                    [&](std::size_t, ItemOutcome &&outcome)
+                    {
+                        applyOutcome(std::move(outcome));
+                    });
             }
 
             emit logMessage(
@@ -656,6 +460,266 @@ namespace redactly
                               ? RunOutcome::Cancelled
                               : RunOutcome::Failed);
         }
+    }
+
+    ProcessorWorker::ItemOutcome ProcessorWorker::processItem(const ScanResult &item,
+                                                              const std::filesystem::path &safeRoot,
+                                                              const int index,
+                                                              const int total,
+                                                              const bool allowReview)
+    {
+        ItemOutcome outcome;
+        try
+        {
+            const auto source = item.sourcePath;
+            const auto destination = (safeRoot / item.relativePath).lexically_normal();
+
+            if (!destinationIsSafe(destination, safeRoot))
+            {
+                outcome.logs.push_back(
+                    tr("Skipped unsafe output path for: %1").arg(pathToQString(source.filename())));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            std::error_code sameFileError;
+            if (std::filesystem::exists(destination, sameFileError) &&
+                std::filesystem::equivalent(source, destination, sameFileError))
+            {
+                outcome.logs.push_back(
+                    tr("Skipped (source and destination are the same file): %1")
+                    .arg(pathToQString(source.filename())));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            std::error_code parentMkdirError;
+            std::filesystem::create_directories(destination.parent_path(), parentMkdirError);
+            if (parentMkdirError)
+            {
+                outcome.logs.push_back(
+                    tr("Skipped (cannot create parent dir): %1 — %2")
+                    .arg(pathToQString(source.filename()),
+                         QString::fromStdString(parentMkdirError.message())));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            std::error_code sizeError;
+            const auto fileSize = std::filesystem::file_size(source, sizeError);
+            if (!sizeError && fileSize > kMaxInputFileBytes)
+            {
+                outcome.logs.push_back(
+                    tr("Skipped (file too large, %1 MB): %2")
+                    .arg(static_cast<qulonglong>(fileSize >> 20))
+                    .arg(pathToQString(source.filename())));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            const QString fileName = pathToQString(source.filename());
+            emit stageChanged(index, total, tr("Loading"), fileName);
+
+            const auto dimensions = inspectImageDimensions(source);
+            if (!dimensions.ok)
+            {
+                outcome.logs.push_back(tr("Skipped (%1): %2").arg(dimensions.reason, fileName));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            cv::Mat image = imreadUnicode(source, cv::IMREAD_UNCHANGED);
+            if (image.empty())
+            {
+                outcome.logs.push_back(
+                    tr("Skipped unreadable image: %1").arg(pathToQString(source)));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            applyOrientation(image, readExifOrientation(source));
+
+            if (cancelled_.load(std::memory_order_acquire))
+            {
+                outcome.cancelled = true;
+                return outcome;
+            }
+
+            const long long pixelCount =
+                    static_cast<long long>(image.cols) * static_cast<long long>(image.rows);
+            if (pixelCount > kMaxPixelCount)
+            {
+                outcome.logs.push_back(
+                    tr("Skipped (image too large, %1 × %2): %3")
+                    .arg(image.cols).arg(image.rows)
+                    .arg(fileName));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            const cv::Mat detectMat = toDetectionBgr(image);
+
+            emit stageChanged(index, total, tr("Detecting"), fileName);
+            FaceDetections detected;
+            {
+                std::lock_guard lock(detectMutex_);
+                if (detector_)
+                {
+                    detected = detector_->detect(detectMat, scoreThreshold_, nmsThreshold_);
+                }
+                if (plateDetector_)
+                {
+                    const auto plates = plateDetector_->detect(detectMat, scoreThreshold_, nmsThreshold_);
+                    detected.insert(detected.end(), plates.begin(), plates.end());
+                }
+            }
+            if (cancelled_.load(std::memory_order_acquire))
+            {
+                outcome.cancelled = true;
+                return outcome;
+            }
+            FaceDetections finalFaces = detected;
+            bool doNotSaveThisImage = false;
+            bool copyOriginalThisImage = false;
+
+            if (allowReview && reviewEnabled_ && reviewReceiver_)
+            {
+                emit stageChanged(index, total, tr("Reviewing"), fileName);
+
+                auto [preview, previewScale] = makeReviewPreview(detectMat);
+                const QVector<QRectF> detectedRects = scaleRects(toQRects(detected), previewScale);
+
+                ReviewResult reviewResult;
+                const bool invoked = QMetaObject::invokeMethod(
+                    reviewReceiver_.data(),
+                    "requestReview",
+                    Qt::BlockingQueuedConnection,
+                    Q_RETURN_ARG(redactly::ReviewResult, reviewResult),
+                    Q_ARG(QImage, preview),
+                    Q_ARG(QString, fileName),
+                    Q_ARG(QVector<QRectF>, detectedRects),
+                    Q_ARG(int, index),
+                    Q_ARG(int, total),
+                    Q_ARG(double, previewScale));
+
+                if (!invoked)
+                {
+                    outcome.logs.push_back(tr("Review bridge unavailable; saved without review."));
+                } else
+                {
+                    switch (reviewResult.decision)
+                    {
+                        case ReviewDecision::CancelAll:
+                            cancelled_.store(true, std::memory_order_release);
+                            break;
+                        case ReviewDecision::DoNotSave:
+                            doNotSaveThisImage = true;
+                            break;
+                        case ReviewDecision::CopyOriginal:
+                            copyOriginalThisImage = true;
+                            break;
+                        case ReviewDecision::Save:
+
+                            finalFaces = toDetections(
+                                scaleRects(reviewResult.finalBoxes,
+                                           previewScale != 0.0 ? 1.0 / previewScale : 1.0));
+                            break;
+                    }
+                }
+            }
+
+            if (cancelled_.load(std::memory_order_acquire))
+            {
+                outcome.cancelled = true;
+                return outcome;
+            }
+
+            if (doNotSaveThisImage)
+            {
+                outcome.logs.push_back(tr("Skipped without saving: %1").arg(fileName));
+                outcome.skipped = 1;
+                return outcome;
+            }
+
+            const auto encodeParams = encodeParamsForExtension(pathToUtf8(destination.extension()));
+
+            if (copyOriginalThisImage)
+            {
+                emit stageChanged(index, total, tr("Saving"), fileName);
+                bool copied = false;
+                if (preserveMetadata_)
+                {
+                    std::error_code copyError;
+                    std::filesystem::copy_file(source, destination,
+                                               std::filesystem::copy_options::overwrite_existing,
+                                               copyError);
+                    copied = !copyError;
+                }
+                else
+                {
+                    copied = atomicImwrite(destination, image, encodeParams);
+                }
+
+                if (!copied)
+                {
+                    outcome.logs.push_back(tr("Failed to copy: %1").arg(
+                        pathToQString(destination)));
+                    outcome.failed = 1;
+                } else
+                {
+                    outcome.logs.push_back(tr("Skipped (original copied): %1").arg(fileName));
+                    outcome.copied = 1;
+                }
+                return outcome;
+            }
+
+            emit stageChanged(index, total, tr("Applying mosaic"), fileName);
+            applyAnonymization(image, finalFaces, method_, mosaicBlockSize_, paddingRatio_,
+                               shape_, softEdges_);
+
+            if (cancelled_.load(std::memory_order_acquire))
+            {
+                outcome.cancelled = true;
+                return outcome;
+            }
+
+            emit stageChanged(index, total, tr("Saving"), fileName);
+            if (!atomicImwrite(destination, image, encodeParams))
+            {
+                outcome.logs.push_back(tr("Failed to save: %1").arg(pathToQString(destination)));
+                outcome.failed = 1;
+            } else
+            {
+                if (preserveMetadata_ && !copyMetadata(source, destination, true))
+                {
+                    outcome.logs.push_back(tr("Saved, but could not copy metadata: %1").arg(fileName));
+                }
+                if (finalFaces.empty())
+                {
+                    outcome.logs.push_back(tr("Saved with no regions redacted: %1").arg(fileName));
+                    outcome.unredacted = 1;
+                } else
+                {
+                    outcome.logs.push_back(
+                        tr("Redacted %n region(s): %1", nullptr,
+                           static_cast<int>(finalFaces.size()))
+                            .arg(fileName));
+                }
+                outcome.anonymized = 1;
+            }
+        } catch (const std::exception &exception)
+        {
+            outcome.logs.push_back(tr("Error processing %1: %2")
+                .arg(pathToQString(item.sourcePath.filename()),
+                     QString::fromUtf8(exception.what())));
+            outcome.failed = 1;
+        } catch (...)
+        {
+            outcome.logs.push_back(tr("Error processing %1")
+                .arg(pathToQString(item.sourcePath.filename())));
+            outcome.failed = 1;
+        }
+        return outcome;
     }
 
     void ProcessorWorker::cancel()

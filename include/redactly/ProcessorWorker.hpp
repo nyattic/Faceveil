@@ -1,5 +1,6 @@
 #pragma once
 
+#include "redactly/ImageScanner.hpp"
 #include "redactly/Mosaic.hpp"
 
 #include <QObject>
@@ -8,7 +9,9 @@
 #include <QStringList>
 
 #include <atomic>
+#include <filesystem>
 #include <memory>
+#include <mutex>
 
 namespace redactly
 {
@@ -69,6 +72,14 @@ namespace redactly
         void finished(redactly::RunOutcome outcome);
 
     private:
+        struct ItemOutcome;
+
+        ItemOutcome processItem(const ScanResult &item,
+                                const std::filesystem::path &safeRoot,
+                                int index,
+                                int total,
+                                bool allowReview);
+
         QString modelPath_;
         QStringList inputs_;
         QString outputDirectory_;
@@ -88,6 +99,7 @@ namespace redactly
         QString plateModelPath_;
         bool gpuAcceleration_;
         std::atomic<bool> cancelled_{false};
+        std::mutex detectMutex_;
         std::shared_ptr<ScrfdFaceDetector> detector_;
         std::shared_ptr<PlateDetector> plateDetector_;
     };

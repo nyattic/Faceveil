@@ -105,6 +105,7 @@ add_library(redactly_core STATIC
     include/redactly/ImageIo.hpp
     include/redactly/ImageScanner.hpp
     include/redactly/Mosaic.hpp
+    include/redactly/OrderedParallel.hpp
     include/redactly/OrtAcceleration.hpp
     include/redactly/PathSafety.hpp
     include/redactly/PathUtil.hpp
@@ -269,4 +270,15 @@ if(BUILD_TESTING)
     endif()
     target_link_libraries(redactly_tracking_tests PRIVATE redactly_core)
     add_test(NAME redactly_tracking_tests COMMAND redactly_tracking_tests)
+
+    add_executable(redactly_parallel_tests
+        tests/test_parallel.cpp
+    )
+    if(MSVC)
+        target_compile_options(redactly_parallel_tests PRIVATE /UNDEBUG)
+    else()
+        target_compile_options(redactly_parallel_tests PRIVATE -UNDEBUG)
+    endif()
+    target_link_libraries(redactly_parallel_tests PRIVATE redactly_core)
+    add_test(NAME redactly_parallel_tests COMMAND redactly_parallel_tests)
 endif()
