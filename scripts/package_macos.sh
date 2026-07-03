@@ -160,6 +160,38 @@ mkdir -p "$DIST_APP/Contents/Resources"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.txt" "$DIST_APP/Contents/Resources/THIRD_PARTY_NOTICES.txt"
 cp "$ROOT_DIR/LICENSE" "$DIST_APP/Contents/Resources/LICENSE.txt"
 
+# ── Bundle FFmpeg ──────────────────────────────────────────────────
+# Static GPL builds from https://ffmpeg.martin-riedl.de (pinned build + SHA256).
+# The app looks for Contents/Resources/ffmpeg/{ffmpeg,ffprobe} and verifies
+# each binary against its .sha256 sidecar at runtime; the sidecars are written
+# after codesigning below, because signing rewrites the binaries.
+FFMPEG_BASE_URL="https://ffmpeg.martin-riedl.de/download/macos/arm64/1783011502_8.1.2"
+FFMPEG_ZIP_SHA256="ef1aa60006c7b77ce170c1608c08d8e4ba1c30c5746f2ac986ded932d0ac2c3c"
+FFPROBE_ZIP_SHA256="c39787f4af7a3932502d2d48db6f6feaaa836b48a73ef78c32cc3285df61dfaf"
+FFMPEG_DIR="$DIST_APP/Contents/Resources/ffmpeg"
+FFMPEG_CACHE="$BUILD_DIR/ffmpeg-download"
+mkdir -p "$FFMPEG_DIR" "$FFMPEG_CACHE"
+
+bundle_ffmpeg_tool() {
+    local name="$1" expected="$2"
+    local archive="$FFMPEG_CACHE/$name.zip"
+    if [[ ! -f "$archive" ]]; then
+        echo "⬇️  $FFMPEG_BASE_URL/$name.zip"
+        curl -fL "$FFMPEG_BASE_URL/$name.zip" -o "$archive"
+    fi
+    local actual
+    actual="$(shasum -a 256 "$archive" | awk '{print $1}')"
+    if [[ "$actual" != "$expected" ]]; then
+        echo "❌ SHA256 mismatch for $name.zip: got $actual, expected $expected"
+        exit 1
+    fi
+    unzip -o -q "$archive" "$name" -d "$FFMPEG_DIR"
+    chmod 755 "$FFMPEG_DIR/$name"
+}
+
+bundle_ffmpeg_tool ffmpeg "$FFMPEG_ZIP_SHA256"
+bundle_ffmpeg_tool ffprobe "$FFPROBE_ZIP_SHA256"
+
 # Guard: SCRFD models are downloaded at runtime and must never be bundled
 # (InsightFace's models are non-commercial and are not redistributed here).
 if find "$DIST_APP" -name '*.onnx' -print -quit | grep -q .; then
@@ -191,6 +223,14 @@ fi
 while IFS= read -r fw; do
   codesign "${SIGN_FLAGS[@]}" --sign "$SIGN_IDENTITY" "$fw"
 done < <(find "$FRAMEWORKS_DIR" -maxdepth 1 -type d -name '*.framework' -print)
+
+# Bundled FFmpeg tools are standalone executables: sign them with the hardened
+# runtime (no app entitlements needed), then write the .sha256 sidecars from
+# the signed binaries so the runtime integrity check matches what ships.
+for tool in "$FFMPEG_DIR/ffmpeg" "$FFMPEG_DIR/ffprobe"; do
+  codesign --force --timestamp --options runtime --sign "$SIGN_IDENTITY" "$tool"
+  shasum -a 256 "$tool" | awk '{print $1}' > "$tool.sha256"
+done
 
 # Finally, sign the app bundle itself (outer signature wraps everything).
 codesign "${SIGN_FLAGS[@]}" --sign "$SIGN_IDENTITY" "$DIST_APP"

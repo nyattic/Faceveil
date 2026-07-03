@@ -18,7 +18,7 @@ APPDIR="$BUILD_DIR/AppDir"
 ARCH="${ARCH:-$(uname -m)}"
 export ARCH
 
-for tool in cmake curl; do
+for tool in cmake curl unzip; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "❌ Required tool not found: $tool"
         exit 1
@@ -100,6 +100,36 @@ fi
 fetch "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${ARCH}.AppImage" "$LINUXDEPLOY" "$linuxdeploy_expected"
 fetch "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-${ARCH}.AppImage" "$LINUXDEPLOY_QT" "$linuxdeploy_qt_expected"
 
+# ── Bundle FFmpeg ──────────────────────────────────────────────────
+# Pinned GPL builds from https://ffmpeg.martin-riedl.de. The binaries link only
+# base system libraries (glibc/libstdc++, same floor as the Ubuntu 22.04 build
+# environment). The app looks for ffmpeg/ffprobe next to its own binary and
+# verifies each against its .sha256 sidecar at runtime. Only x86_64 is pinned;
+# other arches fall back to a system FFmpeg.
+FFMPEG_BASE_URL="https://ffmpeg.martin-riedl.de/download/linux/amd64/1783011670_8.1.2"
+FFMPEG_ZIP_SHA256_x86_64="56452c0bfc4ee0325cd615d62f46ba8264f62eed34f727c2224c6c84fa7b8719"
+FFPROBE_ZIP_SHA256_x86_64="c6f2d36e98f9a4445fad0b0be539f4c4faf13fd502116bf131becd53f56cd390"
+
+bundle_ffmpeg_tool() {
+    local name="$1" expected="$2"
+    local archive="$TOOLS_DIR/$name.zip"
+    if [[ ! -f "$archive" ]]; then
+        echo "⬇️  $FFMPEG_BASE_URL/$name.zip"
+        curl -fL "$FFMPEG_BASE_URL/$name.zip" -o "$archive"
+    fi
+    verify_sha256 "$archive" "$expected"
+    unzip -o -q "$archive" "$name" -d "$APPDIR/usr/bin"
+    chmod 755 "$APPDIR/usr/bin/$name"
+    sha256sum "$APPDIR/usr/bin/$name" | awk '{print $1}' > "$APPDIR/usr/bin/$name.sha256"
+}
+
+if [[ "$ARCH" == "x86_64" ]]; then
+    bundle_ffmpeg_tool ffmpeg "$FFMPEG_ZIP_SHA256_x86_64"
+    bundle_ffmpeg_tool ffprobe "$FFPROBE_ZIP_SHA256_x86_64"
+else
+    echo "⚠️  No pinned FFmpeg build for $ARCH; the AppImage will rely on a system FFmpeg."
+fi
+
 export PATH="$TOOLS_DIR:$PATH"
 if [[ -n "${QMAKE:-}" ]]; then
     export QMAKE
@@ -136,6 +166,19 @@ OUTPUT="Redactly-${VERSION}-${ARCH}.AppImage"
 if find "$APPDIR" -name '*.onnx' -print -quit | grep -q .; then
     echo "❌ ONNX model files found in the AppDir; models must not be bundled."
     exit 1
+fi
+
+# Guard: linuxdeploy must not have modified the bundled FFmpeg binaries, or
+# the runtime sidecar check would reject them.
+if [[ "$ARCH" == "x86_64" ]]; then
+    for tool in ffmpeg ffprobe; do
+        expected="$(cat "$APPDIR/usr/bin/$tool.sha256")"
+        actual="$(sha256sum "$APPDIR/usr/bin/$tool" | awk '{print $1}')"
+        if [[ "$actual" != "$expected" ]]; then
+            echo "❌ Bundled $tool was modified during packaging (sidecar mismatch)."
+            exit 1
+        fi
+    done
 fi
 
 echo "✅ AppImage created: $DIST_DIR/$OUTPUT"

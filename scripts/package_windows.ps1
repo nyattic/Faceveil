@@ -223,6 +223,38 @@ if ($Exiv2Root) {
     }
 }
 
+# ── Bundle FFmpeg ──────────────────────────────────────────────────
+# Pinned GPL build from gyan.dev (versioned URL + SHA256). The app looks for
+# ffmpeg\ffmpeg.exe and ffmpeg\ffprobe.exe next to Redactly.exe and verifies
+# each binary against its .sha256 sidecar at runtime.
+$FfmpegZipUrl = "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-8.0.1-essentials_build.zip"
+$FfmpegZipSha256 = "e2aaeaa0fdbc397d4794828086424d4aaa2102cef1fb6874f6ffd29c0b88b673"
+$ffmpegZip = Join-Path $BuildDir "ffmpeg-win64.zip"
+if (-not (Test-Path $ffmpegZip)) {
+    Write-Host "Downloading FFmpeg: $FfmpegZipUrl"
+    Invoke-WebRequest -Uri $FfmpegZipUrl -OutFile $ffmpegZip
+}
+$ffmpegHash = (Get-FileHash -Algorithm SHA256 $ffmpegZip).Hash.ToLower()
+if ($ffmpegHash -ne $FfmpegZipSha256) {
+    throw "FFmpeg SHA256 mismatch: got $ffmpegHash, expected $FfmpegZipSha256"
+}
+$ffmpegExtract = Join-Path $BuildDir "ffmpeg-win64"
+if (Test-Path $ffmpegExtract) { Remove-Item $ffmpegExtract -Recurse -Force }
+Expand-Archive -Path $ffmpegZip -DestinationPath $ffmpegExtract
+$ffmpegSrc = Get-ChildItem -Path $ffmpegExtract -Recurse -Filter "ffmpeg.exe" -File | Select-Object -First 1
+if (-not $ffmpegSrc) { throw "ffmpeg.exe was not found in the FFmpeg archive." }
+$ffmpegBinDir = $ffmpegSrc.DirectoryName
+$ffmpegDistDir = Join-Path $DistDir "ffmpeg"
+New-Item -ItemType Directory -Path $ffmpegDistDir | Out-Null
+foreach ($tool in @("ffmpeg.exe", "ffprobe.exe")) {
+    $src = Join-Path $ffmpegBinDir $tool
+    if (-not (Test-Path $src)) { throw "$tool was not found in the FFmpeg archive." }
+    Copy-Item $src $ffmpegDistDir -Force
+    $toolHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ffmpegDistDir $tool)).Hash.ToLower()
+    Set-Content -Path (Join-Path $ffmpegDistDir "$tool.sha256") -Value $toolHash -Encoding ascii -NoNewline
+}
+Write-Host "Bundled FFmpeg 8.0.1 (gyan.dev essentials, GPL)."
+
 # ── Third-party notices + license ──────────────────────────────────
 Copy-Item (Join-Path $RootDir "THIRD_PARTY_NOTICES.txt") $DistDir -Force
 Copy-Item (Join-Path $RootDir "LICENSE") (Join-Path $DistDir "LICENSE.txt") -Force

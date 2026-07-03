@@ -12,15 +12,20 @@ and are available for non-commercial research use only. See the README for
 details.
 
 ================================================================================
-FFmpeg  (LGPL-2.1-or-later, with optional GPL-2.0-or-later components)
+FFmpeg  (GPL-2.0-or-later builds; the FFmpeg core is LGPL-2.1-or-later)
 --
 Redactly invokes the FFmpeg and FFprobe command-line tools as separate
-processes for video decoding and encoding. Distributions of Redactly may
-bundle unmodified FFmpeg binaries; otherwise a system-installed FFmpeg found
-on PATH is used. FFmpeg source code is available from https://ffmpeg.org/.
-Builds that enable libx264 are covered by the GNU General Public License
-version 2 or later, which is compatible with Redactly's GPL-3.0-or-later
-license.
+processes for video decoding and encoding. Packaged distributions of Redactly
+bundle unmodified FFmpeg binaries: builds from
+https://ffmpeg.martin-riedl.de/ on macOS and Linux, and from
+https://www.gyan.dev/ffmpeg/ on Windows. When no bundled copy is present, a
+system-installed FFmpeg found on PATH is used instead. The bundled builds
+enable libx264 and are therefore covered by the GNU General Public License
+version 2 or later (reproduced in the Exiv2 section below), which is
+compatible with Redactly's GPL-3.0-or-later license. Complete corresponding
+FFmpeg source code is available from https://ffmpeg.org/download.html, and
+the build configurations are published by the respective build providers at
+the pages above.
 
 FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.
 Copyright (c) the FFmpeg developers.

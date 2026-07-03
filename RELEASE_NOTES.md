@@ -1,8 +1,8 @@
 # Redactly 1.6.0
 
-Adds video redaction and GPU acceleration.
+Adds video redaction (beta) and GPU acceleration.
 
-**Videos.** Drop `.mp4`, `.mov`, or `.m4v` files (H.264/HEVC) alongside your
+**Videos (beta).** Drop `.mp4`, `.mov`, or `.m4v` files (H.264/HEVC) alongside your
 photos and Redactly redacts faces and license plates in every frame. Videos
 are processed in two passes: every frame is analyzed and detections are linked
 into tracks — bidirectionally, with gap interpolation and temporal smoothing —
@@ -13,13 +13,19 @@ codec doesn't fit MP4), container metadata — including GPS — removed, and
 rotation baked into the pixels. A **Video quality** preset in Settings picks
 between **High (near-original)**, **Balanced**, and **Smaller files**.
 
+Video support is a beta: detection coverage and processing speed are still
+being validated across a wider range of real-world footage, so check the
+output before sharing it — every video is listed in the end-of-run summary,
+and one in which nothing was detected is called out explicitly, same as
+photos.
+
 Video processing uses the FFmpeg bundled with the app, or an FFmpeg found on
-`PATH`. Known v1 limits: variable-frame-rate input is converted to a constant
-frame rate, 10-bit/HDR input is rejected rather than silently degraded, other
-codecs and containers (VP9/AV1, WebM/MKV) are reported as unsupported, and
-videos are processed without the review step. A video in which nothing was
-detected is called out in the end-of-run summary, same as photos. Stopping a
-run mid-video removes the partial output file.
+`PATH`. Known limits in this release: variable-frame-rate input is converted
+to a constant frame rate, 10-bit/HDR input is rejected rather than silently
+degraded, other codecs and containers (VP9/AV1, WebM/MKV) are reported as
+unsupported, and videos are processed without the review step. Stopping a
+run mid-video removes the partial output file. Bundling FFmpeg grows the
+downloads by roughly 40–100 MB depending on the platform.
 
 **GPU acceleration.** Detection now runs on the GPU where available — CoreML
 on macOS, DirectML on Windows when the DirectML ONNX Runtime is present — with
