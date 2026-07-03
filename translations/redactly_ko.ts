@@ -125,7 +125,7 @@ Continue?</source>
     <message>
         <location filename="../src/MainWindow.cpp" line="554"/>
         <source>Local, private redaction of faces and license plates in photos</source>
-        <translation>사진 속 얼굴과 번호판을 내 컴퓨터에서만 비공개로 가립니다</translation>
+        <translation>사진 속 얼굴과 번호판을 가립니다</translation>
     </message>
     <message>
         <source>Remove Selected</source>
@@ -735,7 +735,7 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
     <message numerus="yes">
         <source>Redacted %n region(s): %1</source>
-        <translation><numerusform>영역 %n개 편집: %1</numerusform></translation>
+        <translation><numerusform>영역 %n개 가림: %1</numerusform></translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="548"/>
@@ -837,7 +837,7 @@ Images already saved are kept.</source>
     </message>
     <message>
         <source>Copy Original?</source>
-        <translation>원본 복사?</translation>
+        <translation>원본을 복사할까요?</translation>
     </message>
     <message>
         <source>This image will not be anonymized.
@@ -853,11 +853,11 @@ Continue?</source>
     </message>
     <message>
         <source>The unredacted original will be saved to the output folder, including its original metadata (EXIF, GPS, timestamps).</source>
-        <translation>편집되지 않은 원본이 원본 메타데이터(EXIF, GPS, 촬영 시간)를 포함한 채 출력 폴더에 저장됩니다.</translation>
+        <translation>가리지 않은 원본이 메타데이터(EXIF, GPS, 촬영 시간)를 그대로 담은 채 출력 폴더에 저장됩니다.</translation>
     </message>
     <message>
         <source>The unredacted original will be saved to the output folder (re-encoded without metadata).</source>
-        <translation>편집되지 않은 원본이 출력 폴더에 저장됩니다(메타데이터 없이 재인코딩됨).</translation>
+        <translation>가리지 않은 원본이 출력 폴더에 저장됩니다(메타데이터 없이 다시 인코딩됨).</translation>
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="416"/>

@@ -1,3 +1,12 @@
+# Redactly 1.5.1
+
+Polishes the Korean translation. The header subtitle drops the redundant
+privacy pitch, "redact" is now consistently rendered as 가리다 (a few strings
+still said 편집/"edit"), and the Copy Original prompt matches the phrasing of
+the other confirmation dialogs.
+
+---
+
 # Redactly 1.5.0
 
 Adds a light/dark theme. A new **Settings** dialog — opened from the gear
