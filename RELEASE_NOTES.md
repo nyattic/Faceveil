@@ -1,17 +1,25 @@
 # Redactly 1.6.1
 
-Video redaction now understands scene changes. In footage with fast cuts,
-mosaics could linger for up to a second after a hard cut — drifting across
-the new shot — or attach themselves to a different person who appeared in a
-similar position after the cut. The analysis pass now detects shot
-boundaries and face tracks stop cleanly at every cut: no track survives a
-scene change, no gap is interpolated across one, and track ends are never
-extended past one. Detection compares consecutive frames and requires a
-change well above the recent motion level that persists for a couple of
-frames, so camera flashes, strobes, and fast pans within a shot do not
-split tracks. Coverage inside a shot — through motion blur, side profiles,
-and brief occlusions — is unchanged. The log reports how many scene cuts
-each video contained.
+Video tracking is now scene-cut aware, fixing mosaic ghosting in fast-cut
+footage.
+
+## Fixes
+- Mosaics no longer linger for up to a second after a hard cut, drifting
+  across the new shot
+- A mosaic can no longer jump to a different person who appears in a
+  similar position right after a cut
+
+## Details
+- The analysis pass now detects shot boundaries, and tracks stop cleanly at
+  every cut: no track survives a scene change, no gap is interpolated
+  across one, and track ends are never extended past one — in both tracking
+  directions
+- A cut is only declared when the frame-to-frame change stands well above
+  the recent motion level **and** persists for the following frames, so
+  camera flashes, strobes, and fast pans within a shot do not split tracks
+- Coverage inside a shot — through motion blur, side profiles, and brief
+  occlusions — is unchanged
+- The log reports how many scene cuts each video contained
 
 ---
 
