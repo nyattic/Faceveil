@@ -7,7 +7,9 @@ photos and Redactly redacts faces and license plates in every frame. Videos
 are processed in two passes: every frame is analyzed and detections are linked
 into tracks — bidirectionally, with gap interpolation and temporal smoothing —
 so coverage holds through motion blur, side profiles, and brief occlusions;
-the second pass applies the redaction and encodes the result. Output is always
+the second pass applies the redaction and encodes the result. Decoding is
+paced to the analysis speed, so memory use stays bounded even for long,
+high-resolution videos. Output is always
 an H.264 MP4 with the original audio (re-encoded to AAC only when the source
 codec doesn't fit MP4), container metadata — including GPS — removed, and
 rotation baked into the pixels. A **Video quality** preset in Settings picks

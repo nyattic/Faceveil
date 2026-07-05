@@ -8,6 +8,8 @@
 #include <memory>
 #include <optional>
 
+class QLocalServer;
+class QLocalSocket;
 class QProcess;
 
 namespace redactly
@@ -82,6 +84,8 @@ namespace redactly
 
     private:
         std::unique_ptr<QProcess> process_;
+        std::unique_ptr<QLocalServer> server_;
+        std::unique_ptr<QLocalSocket> socket_;
         int frameWidth_ = 0;
         int frameHeight_ = 0;
         bool atEnd_ = false;

@@ -5,12 +5,15 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocalServer>
+#include <QLocalSocket>
 #include <QProcess>
 #include <QRandomGenerator>
 #include <QRegularExpression>
@@ -31,6 +34,7 @@ namespace redactly
         constexpr int kProcessStartTimeoutMs = 15000;
         constexpr int kProcessIoTimeoutMs = 60000;
         constexpr int kProcessFinishTimeoutMs = 300000;
+        constexpr qint64 kDecodeBufferBytes = 64LL * 1024 * 1024;
 
         QString trVideo(const char *text)
         {
@@ -571,21 +575,67 @@ namespace redactly
             filter += QString(",scale=%1:%2:flags=area").arg(frameWidth_).arg(frameHeight_);
         }
 
+        QString sink = QStringLiteral("-");
+#if defined(_WIN32)
+        server_ = std::make_unique<QLocalServer>();
+        const QString pipeName =
+                QString("redactly-video-%1-%2")
+                        .arg(QCoreApplication::applicationPid())
+                        .arg(QRandomGenerator::global()->generate64(), 0, 16);
+        if (!server_->listen(pipeName))
+        {
+            error_ = trVideo("Could not start FFmpeg for decoding.");
+            server_.reset();
+            return false;
+        }
+        sink = QStringLiteral(R"(\\.\pipe\)") + pipeName;
+#endif
+
         process_ = std::make_unique<QProcess>();
         process_->start(tools.ffmpegPath,
-                        {"-v", "error", "-nostdin",
+                        {"-v", "error", "-nostdin", "-y",
                          "-i", path,
                          "-map", "0:v:0",
                          "-vf", filter,
                          "-f", "rawvideo",
                          "-pix_fmt", "bgr24",
-                         "-"});
+                         sink});
         if (!process_->waitForStarted(kProcessStartTimeoutMs))
         {
             error_ = trVideo("Could not start FFmpeg for decoding.");
             process_.reset();
+            server_.reset();
             return false;
         }
+#if defined(_WIN32)
+        bool connected = false;
+        QElapsedTimer connectTimer;
+        connectTimer.start();
+        while (connectTimer.elapsed() < kProcessIoTimeoutMs)
+        {
+            if (server_->waitForNewConnection(100))
+            {
+                connected = true;
+                break;
+            }
+            if (process_->state() == QProcess::NotRunning)
+            {
+                connected = server_->waitForNewConnection(0);
+                break;
+            }
+        }
+        socket_.reset(connected ? server_->nextPendingConnection() : nullptr);
+        if (!socket_)
+        {
+            process_->waitForFinished(kProcessStartTimeoutMs);
+            error_ = trVideo("Decoding failed: %1").arg(processErrorDetail(*process_));
+            close();
+            return false;
+        }
+        socket_->setParent(nullptr);
+        socket_->setReadBufferSize(kDecodeBufferBytes);
+        server_->close();
+#endif
         return true;
     }
 
@@ -606,6 +656,19 @@ namespace redactly
             return false;
         }
 
+        QIODevice *device = socket_ ? static_cast<QIODevice *>(socket_.get())
+                                    : static_cast<QIODevice *>(process_.get());
+        const auto exhausted = [this]() -> bool
+        {
+            if (socket_)
+            {
+                return socket_->state() == QLocalSocket::UnconnectedState &&
+                       socket_->bytesAvailable() == 0;
+            }
+            return process_->state() == QProcess::NotRunning &&
+                   process_->bytesAvailable() == 0;
+        };
+
         const qint64 frameBytes =
                 static_cast<qint64>(frameWidth_) * frameHeight_ * 3;
         frame.create(frameHeight_, frameWidth_, CV_8UC3);
@@ -613,23 +676,17 @@ namespace redactly
         qint64 received = 0;
         while (received < frameBytes)
         {
-            const qint64 chunk = process_->read(
+            const qint64 chunk = device->read(
                 reinterpret_cast<char *>(frame.data) + received, frameBytes - received);
             if (chunk > 0)
             {
                 received += chunk;
                 continue;
             }
-            if (chunk < 0 && process_->state() == QProcess::Running)
-            {
-                error_ = trVideo("Decoding failed: %1").arg(processErrorDetail(*process_));
-                atEnd_ = true;
-                return false;
-            }
-            if (process_->state() == QProcess::NotRunning &&
-                process_->bytesAvailable() == 0)
+            if (exhausted())
             {
                 atEnd_ = true;
+                process_->waitForFinished(kProcessStartTimeoutMs);
                 if (received > 0)
                 {
                     error_ = trVideo("Decoding ended mid-frame: %1")
@@ -642,8 +699,13 @@ namespace redactly
                 }
                 return false;
             }
-            if (!process_->waitForReadyRead(kProcessIoTimeoutMs) &&
-                process_->state() == QProcess::Running)
+            if (chunk < 0)
+            {
+                error_ = trVideo("Decoding failed: %1").arg(processErrorDetail(*process_));
+                atEnd_ = true;
+                return false;
+            }
+            if (!device->waitForReadyRead(kProcessIoTimeoutMs) && !exhausted())
             {
                 error_ = trVideo("Decoding timed out.");
                 atEnd_ = true;
@@ -664,6 +726,8 @@ namespace redactly
             }
             process_.reset();
         }
+        socket_.reset();
+        server_.reset();
         atEnd_ = true;
     }
 

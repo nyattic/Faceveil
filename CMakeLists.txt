@@ -124,6 +124,7 @@ target_include_directories(redactly_core PUBLIC include)
 target_link_libraries(redactly_core PUBLIC
     Qt6::Core
     Qt6::Gui
+    Qt6::Network
     ${OpenCV_LIBS}
     onnxruntime::onnxruntime
     spdlog::spdlog
