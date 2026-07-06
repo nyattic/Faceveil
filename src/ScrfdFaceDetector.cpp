@@ -8,6 +8,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 namespace redactly
 {
@@ -35,9 +36,12 @@ namespace redactly
           sessionOptions_(),
           session_(nullptr)
     {
-        sessionOptions_.SetIntraOpNumThreads(1);
         sessionOptions_.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
         accelerator_ = applyOrtAcceleration(sessionOptions_, enableAcceleration);
+        sessionOptions_.SetIntraOpNumThreads(
+            accelerator_ == OrtAccelerator::None
+                ? static_cast<int>(std::max(1U, std::thread::hardware_concurrency()))
+                : 1);
         const std::u8string modelU8(modelPath.begin(), modelPath.end());
         const std::filesystem::path modelFsPath(modelU8);
         session_ = Ort::Session(env_, modelFsPath.c_str(), sessionOptions_);
