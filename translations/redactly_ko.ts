@@ -846,16 +846,16 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <translation>동영상 처리 실패 %1: %2</translation>
     </message>
     <message>
-        <source>Loading face detection model for video (%1 px)...</source>
-        <translation>동영상용 얼굴 탐지 모델 로드 중 (%1 px)...</translation>
+        <source>Loading face detection model for video...</source>
+        <translation>동영상용 얼굴 탐지 모델 로드 중...</translation>
     </message>
     <message>
         <source>GPU acceleration can't run the video face model at %1 px; using the CPU instead.</source>
         <translation>GPU 가속으로 동영상 얼굴 모델을 %1 px에서 실행할 수 없어 CPU를 대신 사용합니다.</translation>
     </message>
     <message>
-        <source>Video face detection backend: %1</source>
-        <translation>동영상 얼굴 탐지 백엔드: %1</translation>
+        <source>Video face detection: %1 px · %2</source>
+        <translation>동영상 얼굴 탐지: %1 px · %2</translation>
     </message>
     <message>
         <source>%1m %2s left</source>

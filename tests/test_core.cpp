@@ -2,7 +2,9 @@
 #include "redactly/ImageIo.hpp"
 #include "redactly/ImageScanner.hpp"
 #include "redactly/Mosaic.hpp"
+#include "redactly/OnnxGraphPatch.hpp"
 #include "redactly/PathSafety.hpp"
+#include "redactly/ScrfdFaceDetector.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -14,8 +16,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <set>
+#include <vector>
 
 #ifdef REDACTLY_HAVE_EXIV2
 #include <exiv2/exiv2.hpp>
@@ -356,6 +361,36 @@ namespace
 #endif
 }
 
+namespace
+{
+    void testOnnxPatchRejectsInvalidBytes()
+    {
+        assert(!redactly::makeOnnxSpatialDimsDynamic({}).has_value());
+        const std::vector<std::uint8_t> garbage = {0xFF, 0xFF, 0xFF, 0x01, 0x02, 0x9C};
+        assert(!redactly::makeOnnxSpatialDimsDynamic(garbage).has_value());
+    }
+
+    void testFixedScrfdModelRunsAtRequestedSize()
+    {
+        const auto modelPath = std::filesystem::path(__FILE__).parent_path().parent_path()
+                               / "models" / "2.5g_bnkps.onnx";
+        if (!std::filesystem::exists(modelPath))
+        {
+            std::puts("skipping fixed-model patch test: models/2.5g_bnkps.onnx not present");
+            return;
+        }
+
+        redactly::ScrfdFaceDetector nativeSize(modelPath.string(), 640);
+        assert(nativeSize.inputSize() == 640);
+
+        redactly::ScrfdFaceDetector patchedSize(modelPath.string(), 320);
+        assert(patchedSize.inputSize() == 320);
+
+        const cv::Mat blank(180, 320, CV_8UC3, cv::Scalar(30, 30, 30));
+        assert(patchedSize.detect(blank, 0.5F, 0.4F).empty());
+    }
+}
+
 int main()
 {
     testSupportedImageExtensions();
@@ -368,6 +403,8 @@ int main()
     testEncodeParams();
     testIntersectionOverUnion();
     testNonMaxSuppression();
+    testOnnxPatchRejectsInvalidBytes();
+    testFixedScrfdModelRunsAtRequestedSize();
     testDestinationPathSafety();
 #ifndef _WIN32
     testDestinationRejectsSymlinkEscape();

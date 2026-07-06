@@ -94,6 +94,7 @@ add_library(redactly_core STATIC
     src/ImageIo.cpp
     src/ImageScanner.cpp
     src/Mosaic.cpp
+    src/OnnxGraphPatch.cpp
     src/OrtAcceleration.cpp
     src/PlateDetector.cpp
     src/ProcessorWorker.cpp
@@ -108,6 +109,7 @@ add_library(redactly_core STATIC
     include/redactly/ImageIo.hpp
     include/redactly/ImageScanner.hpp
     include/redactly/Mosaic.hpp
+    include/redactly/OnnxGraphPatch.hpp
     include/redactly/OrderedParallel.hpp
     include/redactly/OrtAcceleration.hpp
     include/redactly/PathSafety.hpp

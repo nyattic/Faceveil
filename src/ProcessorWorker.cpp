@@ -871,8 +871,7 @@ namespace redactly
 
         if (detector_ && !videoDetector_)
         {
-            emit logMessage(tr("Loading face detection model for video (%1 px)...")
-                                .arg(kVideoDetectionInputSize));
+            emit logMessage(tr("Loading face detection model for video..."));
             try
             {
                 videoDetector_ = std::make_shared<ScrfdFaceDetector>(
@@ -892,7 +891,8 @@ namespace redactly
                 videoDetector_ = std::make_shared<ScrfdFaceDetector>(
                     modelPath_.toStdString(), kVideoDetectionInputSize, false);
             }
-            emit logMessage(tr("Video face detection backend: %1")
+            emit logMessage(tr("Video face detection: %1 px · %2")
+                                .arg(videoDetector_->inputSize())
                                 .arg(QString::fromLatin1(
                                     ortAcceleratorName(videoDetector_->accelerator()))));
         }

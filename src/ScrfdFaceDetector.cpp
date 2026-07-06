@@ -1,10 +1,14 @@
 #include "redactly/ScrfdFaceDetector.hpp"
 
+#include "redactly/OnnxGraphPatch.hpp"
+
 #include <opencv2/imgproc.hpp>
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -19,6 +23,25 @@ namespace redactly
         constexpr int kMaxAnchorsPerLocation = 2;
         constexpr size_t kMaxCandidatesBeforeNms = 2000;
         constexpr int kMaxInputSize = 2048;
+        constexpr std::uintmax_t kMaxModelFileBytes = 512ULL << 20;
+
+        std::vector<std::uint8_t> readModelFile(const std::filesystem::path &path)
+        {
+            std::error_code sizeError;
+            const auto size = std::filesystem::file_size(path, sizeError);
+            if (sizeError || size == 0 || size > kMaxModelFileBytes)
+            {
+                throw std::runtime_error("Could not read the model file.");
+            }
+            std::ifstream stream(path, std::ios::binary);
+            std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
+            if (!stream.read(reinterpret_cast<char *>(bytes.data()),
+                             static_cast<std::streamsize>(bytes.size())))
+            {
+                throw std::runtime_error("Could not read the model file.");
+            }
+            return bytes;
+        }
 
         cv::Rect2f distanceToBox(const cv::Point2f &center, const float *distances)
         {
@@ -44,7 +67,8 @@ namespace redactly
                 : 1);
         const std::u8string modelU8(modelPath.begin(), modelPath.end());
         const std::filesystem::path modelFsPath(modelU8);
-        session_ = Ort::Session(env_, modelFsPath.c_str(), sessionOptions_);
+        const auto modelBytes = readModelFile(modelFsPath);
+        session_ = Ort::Session(env_, modelBytes.data(), modelBytes.size(), sessionOptions_);
 
         Ort::AllocatorWithDefaultOptions allocator;
 
@@ -112,7 +136,14 @@ namespace redactly
             {
                 throw std::runtime_error("SCRFD model input size is too large.");
             }
-            inputSize_ = static_cast<int>(modelHeight);
+            if (static_cast<int>(modelHeight) != inputSize_)
+            {
+                adoptDynamicSession(modelBytes, static_cast<int>(modelHeight));
+            }
+            else
+            {
+                inputSize_ = static_cast<int>(modelHeight);
+            }
         }
 
         for (size_t i = 0; i < std::min<size_t>(outputNames_.size(), kStrides.size() * 2U); ++i)
@@ -134,6 +165,56 @@ namespace redactly
         for (const auto &name: outputNames_)
         {
             outputNamePtrs_.push_back(name.c_str());
+        }
+    }
+
+    void ScrfdFaceDetector::adoptDynamicSession(const std::vector<std::uint8_t> &modelBytes,
+                                                int fixedSize)
+    {
+        const auto patched = makeOnnxSpatialDimsDynamic(modelBytes);
+        if (!patched)
+        {
+            inputSize_ = fixedSize;
+            return;
+        }
+        try
+        {
+            Ort::Session dynamicSession(env_, patched->data(), patched->size(), sessionOptions_);
+
+            std::vector<float> probe(
+                    static_cast<std::size_t>(kChannels) * inputSize_ * inputSize_, 0.0F);
+            const std::array<int64_t, 4> probeShape = {1, kChannels, inputSize_, inputSize_};
+            Ort::MemoryInfo memoryInfo =
+                    Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+            Ort::Value probeTensor = Ort::Value::CreateTensor<float>(
+                    memoryInfo, probe.data(), probe.size(), probeShape.data(), probeShape.size());
+
+            std::vector<const char *> inputPtrs;
+            std::vector<const char *> outputPtrs;
+            for (const auto &name: inputNames_)
+            {
+                inputPtrs.push_back(name.c_str());
+            }
+            for (const auto &name: outputNames_)
+            {
+                outputPtrs.push_back(name.c_str());
+            }
+            dynamicSession.Run(Ort::RunOptions{nullptr}, inputPtrs.data(), &probeTensor, 1,
+                               outputPtrs.data(), outputPtrs.size());
+
+            session_ = std::move(dynamicSession);
+        }
+        catch (const Ort::Exception &)
+        {
+            if (accelerator_ != OrtAccelerator::None)
+            {
+                throw;
+            }
+            inputSize_ = fixedSize;
+        }
+        catch (const std::exception &)
+        {
+            inputSize_ = fixedSize;
         }
     }
 

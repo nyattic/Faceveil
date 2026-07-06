@@ -8,6 +8,7 @@
 #include <onnxruntime_cxx_api.h>
 #include <opencv2/core.hpp>
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,8 @@ namespace redactly
 
         [[nodiscard]] OrtAccelerator accelerator() const noexcept { return accelerator_; }
 
+        [[nodiscard]] int inputSize() const noexcept { return inputSize_; }
+
     private:
         struct PreparedImage
         {
@@ -33,6 +36,8 @@ namespace redactly
             int resizedWidth = 0;
             int resizedHeight = 0;
         };
+
+        void adoptDynamicSession(const std::vector<std::uint8_t> &modelBytes, int fixedSize);
 
         [[nodiscard]] PreparedImage prepare(const cv::Mat &bgrImage) const;
 
