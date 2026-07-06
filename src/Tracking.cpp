@@ -169,8 +169,14 @@ namespace redactly
 
         std::erase_if(active_, [&](ActiveTrack &active)
         {
+            const cv::Rect2f &lastBox = active.track.boxes.back().box;
+            const float scale = std::max(lastBox.width, lastBox.height);
+            const float speed = std::hypot(active.velocity.x, active.velocity.y);
+            const bool moving = scale > 0.0F && speed > config_.coastMotionThreshold * scale;
+            const int coastLimit = moving ? config_.maxFramesSinceHighScoreMoving
+                                          : config_.maxFramesSinceHighScore;
             if (frame - active.lastFrame > config_.maxFramesLost
-                || frame - active.lastHighScoreFrame > config_.maxFramesSinceHighScore)
+                || frame - active.lastHighScoreFrame > coastLimit)
             {
                 finished_.push_back(std::move(active.track));
                 return true;
@@ -465,14 +471,28 @@ namespace redactly
         std::erase_if(tracks, [&](const Track &track)
         {
             int strong = 0;
+            int real = 0;
             for (const auto &tracked: track.boxes)
             {
-                if (!tracked.interpolated && tracked.score >= config.strongScoreThreshold)
+                if (tracked.interpolated)
+                {
+                    continue;
+                }
+                ++real;
+                if (tracked.score >= config.strongScoreThreshold)
                 {
                     ++strong;
                 }
             }
-            return strong < config.minStrongDetections;
+            if (strong >= config.minStrongDetections)
+            {
+                return false;
+            }
+            const bool cleanShortBurst =
+                    strong >= config.shortTrackMinStrong
+                    && static_cast<float>(strong)
+                               >= config.shortTrackStrongRatio * static_cast<float>(real);
+            return !cleanShortBurst;
         });
         for (auto &track: tracks)
         {

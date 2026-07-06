@@ -34,6 +34,8 @@ namespace redactly
         float iouThreshold = 0.3F;
         int maxFramesLost = 30;
         int maxFramesSinceHighScore = 30;
+        int maxFramesSinceHighScoreMoving = 45;
+        float coastMotionThreshold = 0.05F;
         float velocityBlend = 0.3F;
     };
 
@@ -68,11 +70,13 @@ namespace redactly
 
     struct TrackPostProcessConfig
     {
-        int maxInterpolationGap = 12;
+        int maxInterpolationGap = 20;
         int smoothingRadius = 2;
         int extensionFrames = 3;
         float strongScoreThreshold = 0.5F;
         int minStrongDetections = 3;
+        int shortTrackMinStrong = 2;
+        float shortTrackStrongRatio = 0.5F;
     };
 
     [[nodiscard]] std::vector<Track> buildTracks(const std::vector<FaceDetections> &frameDetections,

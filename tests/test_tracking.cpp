@@ -129,6 +129,36 @@ namespace
         assert(solidTracks.size() == 1);
     }
 
+    void testShortStrongBurstIsKept()
+    {
+        auto burst = movingObjectSequence(2, 50.0F, 5.0F);
+        auto tracks = redactly::buildBidirectionalTracks(burst);
+        assert(tracks.size() == 1);
+        redactly::postProcessTracks(tracks, {}, 2);
+        assert(tracks.size() == 1);
+    }
+
+    void testMovingCoastingSurvivesLongerThanStatic()
+    {
+        auto stationary = movingObjectSequence(60, 50.0F, 0.0F, 100.0F, 0.2F);
+        for (int frame = 0; frame <= 4; ++frame)
+        {
+            stationary[frame][0].score = 0.9F;
+        }
+        const auto stationaryTracks = redactly::buildTracks(stationary);
+        assert(stationaryTracks.size() == 1);
+        assert(stationaryTracks[0].lastFrame() == 34);
+
+        auto moving = movingObjectSequence(60, 50.0F, 6.0F, 100.0F, 0.2F);
+        for (int frame = 0; frame <= 4; ++frame)
+        {
+            moving[frame][0].score = 0.9F;
+        }
+        const auto movingTracks = redactly::buildTracks(moving);
+        assert(movingTracks.size() == 1);
+        assert(movingTracks[0].lastFrame() == 49);
+    }
+
     void testCrossingObjectsKeepTwoTracks()
     {
         std::vector<redactly::FaceDetections> sequence(21);
@@ -418,6 +448,8 @@ int main()
     testLowConfidenceDetectionsExtendButNeverStartTracks();
     testLowConfidenceCoastingExpires();
     testTracksWithFewStrongDetectionsAreDropped();
+    testShortStrongBurstIsKept();
+    testMovingCoastingSurvivesLongerThanStatic();
     testCrossingObjectsKeepTwoTracks();
     testBidirectionalMergeProducesSingleTrack();
     testBackwardPassRecoversLowConfidenceStart();
