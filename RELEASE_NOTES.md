@@ -1,3 +1,31 @@
+# Redactly 1.8.0
+
+Video face detection is more accurate: it now analyzes video at the full
+detection resolution, so it catches faces it used to miss and stops covering
+signage it mistook for a face.
+
+## Improvements
+- The fast face model now analyzes video at the full detection resolution
+  instead of a third of it, so smaller and partly turned faces that used to
+  slip through are covered
+- Fewer false masks: a logo or sign that briefly resembles a face no longer
+  stays covered for the rest of the shot
+- Masks follow faces more faithfully — they no longer glide into place a few
+  frames early, and stay on a face through brief detection dropouts
+
+## Details
+- The bundled fast model ships with a fixed 640 px input; it is now adapted in
+  memory at load time to run at the requested video resolution, with a probe
+  check and automatic fallback to its native size, or to the CPU, if a GPU
+  backend can't run it
+- A track needs several confident detections to be kept, so sparse false
+  positives are dropped — while a short but clearly detected face is still
+  covered
+- A track that goes too long without a confident detection ends instead of
+  coasting indefinitely, and moving faces get more leeway than static signage
+
+---
+
 # Redactly 1.7.1
 
 Fixes video redaction failing on macOS with GPU acceleration, and stops a
