@@ -222,6 +222,8 @@ namespace redactly
 #if defined(_WIN32)
             return {QStringLiteral("h264_nvenc"), QStringLiteral("h264_amf"),
                     QStringLiteral("h264_qsv")};
+#elif defined(__APPLE__)
+            return {QStringLiteral("h264_videotoolbox")};
 #else
             return {};
 #endif
@@ -243,6 +245,11 @@ namespace redactly
             {
                 return {"-c:v", "h264_qsv", "-preset", "slow",
                         "-global_quality", QString::number(crf)};
+            }
+            if (encoder == QLatin1String("h264_videotoolbox"))
+            {
+                return {"-c:v", "h264_videotoolbox",
+                        "-q:v", QString::number(std::clamp(100 - 2 * crf, 1, 100))};
             }
             return {"-c:v", "libx264", "-preset", "medium",
                     "-crf", QString::number(crf)};
