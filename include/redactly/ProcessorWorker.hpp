@@ -18,11 +18,52 @@ namespace redactly
     class ScrfdFaceDetector;
     class PlateDetector;
 
+    struct ProcessingRequest
+    {
+        QString modelPath;
+        QStringList inputs;
+        QString outputDirectory;
+        QString plateModelPath;
+        QObject *reviewReceiver = nullptr;
+        bool recursive = true;
+        float scoreThreshold = 0.5F;
+        float nmsThreshold = 0.4F;
+        int mosaicBlockSize = 14;
+        float paddingRatio = 0.18F;
+        AnonymizationMethod method = AnonymizationMethod::Mosaic;
+        MaskShape shape = MaskShape::Rectangle;
+        bool softEdges = false;
+        bool preserveMetadata = false;
+        bool reviewEnabled = false;
+        bool detectFaces = true;
+        bool detectPlates = false;
+        bool gpuAcceleration = false;
+        int videoCrf = 18;
+    };
+
+    struct DetectorCache
+    {
+        std::shared_ptr<ScrfdFaceDetector> face;
+        std::shared_ptr<PlateDetector> plate;
+        std::shared_ptr<ScrfdFaceDetector> videoFace;
+    };
+
     enum class RunOutcome
     {
         Completed,
+        CompletedWithWarnings,
         Cancelled,
         Failed,
+    };
+
+    struct RunSummary
+    {
+        int total = 0;
+        int redacted = 0;
+        int copied = 0;
+        int skipped = 0;
+        int failed = 0;
+        int unredacted = 0;
     };
 
     class ProcessorWorker final : public QObject
@@ -30,28 +71,7 @@ namespace redactly
         Q_OBJECT
 
     public:
-        ProcessorWorker(QString modelPath,
-                        QStringList inputs,
-                        QString outputDirectory,
-                        bool recursive,
-                        float scoreThreshold,
-                        float nmsThreshold,
-                        int mosaicBlockSize,
-                        float paddingRatio,
-                        AnonymizationMethod method,
-                        MaskShape shape,
-                        bool softEdges,
-                        bool preserveMetadata,
-                        bool reviewEnabled,
-                        QObject *reviewReceiver,
-                        std::shared_ptr<ScrfdFaceDetector> cachedDetector = {},
-                        bool detectFaces = true,
-                        bool detectPlates = false,
-                        QString plateModelPath = {},
-                        std::shared_ptr<PlateDetector> cachedPlateDetector = {},
-                        bool gpuAcceleration = false,
-                        int videoCrf = 18,
-                        std::shared_ptr<ScrfdFaceDetector> cachedVideoDetector = {});
+        explicit ProcessorWorker(ProcessingRequest request, DetectorCache cache = {});
 
         ~ProcessorWorker() override;
 
@@ -72,6 +92,8 @@ namespace redactly
         void stageChanged(int index, int total, const QString &stage, const QString &fileName);
 
         void logMessage(const QString &message);
+
+        void summaryAvailable(redactly::RunSummary summary);
 
         void finished(redactly::RunOutcome outcome);
 
@@ -117,3 +139,4 @@ namespace redactly
 }
 
 Q_DECLARE_METATYPE(redactly::RunOutcome)
+Q_DECLARE_METATYPE(redactly::RunSummary)

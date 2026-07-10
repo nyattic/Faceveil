@@ -96,6 +96,7 @@ add_library(redactly_core STATIC
     src/Mosaic.cpp
     src/OnnxGraphPatch.cpp
     src/OrtAcceleration.cpp
+    src/OutputPlan.cpp
     src/PlateDetector.cpp
     src/ProcessorWorker.cpp
     src/SceneCut.cpp
@@ -112,6 +113,7 @@ add_library(redactly_core STATIC
     include/redactly/OnnxGraphPatch.hpp
     include/redactly/OrderedParallel.hpp
     include/redactly/OrtAcceleration.hpp
+    include/redactly/OutputPlan.hpp
     include/redactly/PathSafety.hpp
     include/redactly/PathUtil.hpp
     include/redactly/PlateDetector.hpp
@@ -254,6 +256,7 @@ add_executable(redactly_inspect_model
 )
 
 target_link_libraries(redactly_inspect_model PRIVATE onnxruntime::onnxruntime spdlog::spdlog)
+redactly_harden(redactly_inspect_model)
 
 if(BUILD_TESTING)
     add_executable(redactly_tests
@@ -267,6 +270,7 @@ if(BUILD_TESTING)
         target_compile_options(redactly_tests PRIVATE -UNDEBUG)
     endif()
     target_link_libraries(redactly_tests PRIVATE redactly_core)
+    redactly_harden(redactly_tests)
     add_test(NAME redactly_tests COMMAND redactly_tests)
 
     add_executable(redactly_tracking_tests
@@ -278,6 +282,7 @@ if(BUILD_TESTING)
         target_compile_options(redactly_tracking_tests PRIVATE -UNDEBUG)
     endif()
     target_link_libraries(redactly_tracking_tests PRIVATE redactly_core)
+    redactly_harden(redactly_tracking_tests)
     add_test(NAME redactly_tracking_tests COMMAND redactly_tracking_tests)
 
     add_executable(redactly_parallel_tests
@@ -289,6 +294,7 @@ if(BUILD_TESTING)
         target_compile_options(redactly_parallel_tests PRIVATE -UNDEBUG)
     endif()
     target_link_libraries(redactly_parallel_tests PRIVATE redactly_core)
+    redactly_harden(redactly_parallel_tests)
     add_test(NAME redactly_parallel_tests COMMAND redactly_parallel_tests)
 
     add_executable(redactly_video_io_tests
@@ -300,6 +306,7 @@ if(BUILD_TESTING)
         target_compile_options(redactly_video_io_tests PRIVATE -UNDEBUG)
     endif()
     target_link_libraries(redactly_video_io_tests PRIVATE redactly_core)
+    redactly_harden(redactly_video_io_tests)
     add_test(NAME redactly_video_io_tests COMMAND redactly_video_io_tests)
     set_tests_properties(redactly_video_io_tests PROPERTIES SKIP_RETURN_CODE 77)
 endif()

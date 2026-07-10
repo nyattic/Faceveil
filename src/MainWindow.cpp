@@ -1059,6 +1059,7 @@ namespace redactly
         openOutputButton_->setVisible(false);
         runTimer_.start();
         progressBar_->setValue(0);
+        lastRunSummary_ = {};
         statusLabel_->setText(tr("Starting…"));
 
         auto detectorForRun = (cachedDetectorModelPath_ == modelPath) ? cachedDetector_ : nullptr;
@@ -1068,32 +1069,38 @@ namespace redactly
                                : nullptr;
 
         workerThread_ = new QThread(this);
-        worker_ = new ProcessorWorker(modelPath,
-                                      inputPaths(),
-                                      outputDirEdit_->text(),
-                                      recursiveCheck_->isChecked(),
-                                      static_cast<float>(scoreThresholdSpin_->value()),
-                                      static_cast<float>(nmsThresholdSpin_->value()),
-                                      blockSizeSpin_->value(),
-                                      static_cast<float>(paddingSpin_->value()),
-                                      static_cast<AnonymizationMethod>(methodCombo_->currentData().toInt()),
-                                      static_cast<MaskShape>(shapeCombo_->currentData().toInt()),
-                                      softEdgeCheck_->isChecked(),
-                                      preserveMetaCheck_->isChecked(),
-                                      reviewCheck_->isChecked(),
-                                      this,
-                                      std::move(detectorForRun),
-                                      detectFaces,
-                                      detectPlates,
-                                      plateModelPath,
-                                      std::move(plateForRun),
-                                      gpuAcceleration_,
-                                      crfForQuality(static_cast<VideoQuality>(videoQuality_)),
-                                      std::move(videoDetectorForRun));
+        ProcessingRequest request;
+        request.modelPath = modelPath;
+        request.inputs = inputPaths();
+        request.outputDirectory = outputDirEdit_->text();
+        request.plateModelPath = plateModelPath;
+        request.reviewReceiver = this;
+        request.recursive = recursiveCheck_->isChecked();
+        request.scoreThreshold = static_cast<float>(scoreThresholdSpin_->value());
+        request.nmsThreshold = static_cast<float>(nmsThresholdSpin_->value());
+        request.mosaicBlockSize = blockSizeSpin_->value();
+        request.paddingRatio = static_cast<float>(paddingSpin_->value());
+        request.method = static_cast<AnonymizationMethod>(methodCombo_->currentData().toInt());
+        request.shape = static_cast<MaskShape>(shapeCombo_->currentData().toInt());
+        request.softEdges = softEdgeCheck_->isChecked();
+        request.preserveMetadata = preserveMetaCheck_->isChecked();
+        request.reviewEnabled = reviewCheck_->isChecked();
+        request.detectFaces = detectFaces;
+        request.detectPlates = detectPlates;
+        request.gpuAcceleration = gpuAcceleration_;
+        request.videoCrf = crfForQuality(static_cast<VideoQuality>(videoQuality_));
+
+        DetectorCache cache;
+        cache.face = std::move(detectorForRun);
+        cache.plate = std::move(plateForRun);
+        cache.videoFace = std::move(videoDetectorForRun);
+        worker_ = new ProcessorWorker(std::move(request), std::move(cache));
 
         worker_->moveToThread(workerThread_);
         connect(workerThread_, &QThread::started, worker_, &ProcessorWorker::process);
         connect(worker_, &ProcessorWorker::logMessage, this, &MainWindow::appendLog);
+        connect(worker_, &ProcessorWorker::summaryAvailable, this,
+                [this](const RunSummary summary) { lastRunSummary_ = summary; });
         connect(worker_, &ProcessorWorker::progressChanged, this, [this](int completed, int total)
         {
             progressBar_->setRange(0, std::max(total, 1));
@@ -1139,6 +1146,28 @@ namespace redactly
                 appendLog(tr("Finished."));
                 statusLabel_->setText(tr("Done") + QStringLiteral("  ·  ") + elapsed);
                 openOutputButton_->setVisible(true);
+                break;
+            case RunOutcome::CompletedWithWarnings:
+                appendLog(tr("Completed with warnings — review the results before sharing."));
+                statusLabel_->setProperty("state", "warning");
+                statusLabel_->style()->unpolish(statusLabel_);
+                statusLabel_->style()->polish(statusLabel_);
+                statusLabel_->setText(QStringLiteral("⚠  ") + tr("Review required") +
+                                      QStringLiteral("  ·  ") + elapsed);
+                openOutputButton_->setVisible(true);
+                QMessageBox::warning(
+                    this,
+                    tr("Review Required"),
+                    tr("Processing finished, but some results need attention.\n\n"
+                       "Total: %1\nRedacted: %2\nSaved without redaction: %3\nCopied: %4\n"
+                       "Skipped: %5\nFailed: %6\n\n"
+                       "Check these results before sharing them.")
+                        .arg(lastRunSummary_.total)
+                        .arg(lastRunSummary_.redacted)
+                        .arg(lastRunSummary_.unredacted)
+                        .arg(lastRunSummary_.copied)
+                        .arg(lastRunSummary_.skipped)
+                        .arg(lastRunSummary_.failed));
                 break;
             case RunOutcome::Cancelled:
                 appendLog(tr("Cancelled."));

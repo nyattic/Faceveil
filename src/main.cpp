@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
 
     qRegisterMetaType<redactly::ReviewResult>("redactly::ReviewResult");
     qRegisterMetaType<redactly::RunOutcome>("redactly::RunOutcome");
+    qRegisterMetaType<redactly::RunSummary>("redactly::RunSummary");
     qRegisterMetaType<QVector<QRectF> >("QVector<QRectF>");
 
 #ifdef Q_OS_MACOS

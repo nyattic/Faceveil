@@ -565,6 +565,40 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <translation>완료</translation>
     </message>
     <message>
+        <source>Completed with warnings — review the results before sharing.</source>
+        <translation>주의 사항과 함께 완료됨 — 공유하기 전에 결과를 검토하세요.</translation>
+    </message>
+    <message>
+        <source>Review required</source>
+        <translation>검토 필요</translation>
+    </message>
+    <message>
+        <source>Review Required</source>
+        <translation>검토 필요</translation>
+    </message>
+    <message>
+        <source>Processing finished, but some results need attention.
+
+Total: %1
+Redacted: %2
+Saved without redaction: %3
+Copied: %4
+Skipped: %5
+Failed: %6
+
+Check these results before sharing them.</source>
+        <translation>처리가 끝났지만 확인이 필요한 결과가 있습니다.
+
+전체: %1
+가림 완료: %2
+가리지 않고 저장됨: %3
+복사: %4
+건너뜀: %5
+실패: %6
+
+공유하기 전에 이 결과를 확인하세요.</translation>
+    </message>
+    <message>
         <source>Failed — check the log for details.</source>
         <translation>실패 — 자세한 내용은 로그를 확인하세요.</translation>
     </message>
@@ -677,9 +711,25 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <translation>여러 입력이 같은 출력 경로에 기록되어 실행을 거부합니다.</translation>
     </message>
     <message>
+        <source>Refusing to run because an output path is already in use.</source>
+        <translation>사용 중인 출력 경로가 있어 실행을 거부합니다.</translation>
+    </message>
+    <message>
+        <source>Existing output would be overwritten: &apos;%1&apos;</source>
+        <translation>기존 출력 파일을 덮어쓰게 됩니다: '%1'</translation>
+    </message>
+    <message>
+        <source>Additional output conflicts omitted.</source>
+        <translation>추가 출력 충돌은 생략했습니다.</translation>
+    </message>
+    <message>
         <location filename="../src/ProcessorWorker.cpp" line="356"/>
         <source>Preflight: output paths are unique.</source>
         <translation>사전 점검: 출력 경로가 모두 고유합니다.</translation>
+    </message>
+    <message>
+        <source>Preflight: output paths are available.</source>
+        <translation>사전 점검: 모든 출력 경로를 사용할 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="378"/>
@@ -788,8 +838,8 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="562"/>
-        <source>Summary: %1 anonymized, %2 copied, %3 skipped, %4 failed (of %5).</source>
-        <translation>요약: 익명화 %1, 복사 %2, 건너뜀 %3, 실패 %4 (총 %5).</translation>
+        <source>Summary: %1 redacted, %2 saved without redaction, %3 copied, %4 skipped, %5 failed (of %6).</source>
+        <translation>요약: 가림 완료 %1, 가리지 않고 저장 %2, 복사 %3, 건너뜀 %4, 실패 %5 (총 %6).</translation>
     </message>
     <message numerus="yes">
         <source>Warning: %n image(s) were saved with no regions redacted. Check them before sharing.</source>
@@ -799,6 +849,10 @@ Rounded = elliptical mask that follows the face and leaves corners untouched. De
         <location filename="../src/ProcessorWorker.cpp" line="571"/>
         <source>Done.</source>
         <translation>완료.</translation>
+    </message>
+    <message>
+        <source>Completed with warnings. Review the summary before sharing.</source>
+        <translation>주의 사항과 함께 완료되었습니다. 공유하기 전에 요약을 확인하세요.</translation>
     </message>
     <message>
         <location filename="../src/ProcessorWorker.cpp" line="575"/>
@@ -1129,6 +1183,10 @@ Continue?</source>
     <message>
         <source>Could not move the finished video into place.</source>
         <translation>완성된 동영상을 제자리로 옮기지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>The output file already exists.</source>
+        <translation>출력 파일이 이미 존재합니다.</translation>
     </message>
 </context>
 <context>

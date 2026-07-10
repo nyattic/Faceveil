@@ -34,7 +34,6 @@ namespace redactly
         constexpr int kProcessStartTimeoutMs = 15000;
         constexpr int kProcessIoTimeoutMs = 60000;
         constexpr int kProcessFinishTimeoutMs = 300000;
-        constexpr qint64 kDecodeBufferBytes = 64LL * 1024 * 1024;
         constexpr qint64 kMaxEncodeBacklogBytes = 256LL * 1024 * 1024;
 
         QString trVideo(const char *text)
@@ -906,7 +905,12 @@ namespace redactly
         }
         process_.reset();
 
-        QFile::remove(destinationPath_);
+        if (QFileInfo::exists(destinationPath_))
+        {
+            QFile::remove(tempPath_);
+            error_ = trVideo("The output file already exists.");
+            return false;
+        }
         if (!QFile::rename(tempPath_, destinationPath_))
         {
             if (!QFile::copy(tempPath_, destinationPath_))

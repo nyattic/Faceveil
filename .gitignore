@@ -1,14 +1,29 @@
-build/
-build-windows/
-build-release/
-build-check/
+# CMake and packaging output
+build*/
 dist/
+cmake-build-*/
+CMakeUserPresets.json
+compile_commands.json
+CMakeCache.txt
+CMakeFiles/
+Testing/
+
+# IDE and operating-system files
 *.user
-*.DS_Store
+.DS_Store
+**/.DS_Store
 ._*
-models/*.onnx
-output/
 .idea/
+.vscode/
 .cache/
 .claude/
-docs/video-detection-improvements.md
+
+# Local models, results, and incomplete downloads
+models/*.onnx
+models/*.part
+output/
+*.part
+
+# Local runtime diagnostics
+*.log
+*.dSYM/

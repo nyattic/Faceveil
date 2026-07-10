@@ -173,6 +173,23 @@ int main(int argc, char **argv)
     assert(!rawOutput.contains("37.5665"));
     std::puts("output verification: ok");
 
+    {
+        const QString existingPath = tempDir.filePath("out/existing.mp4");
+        QFile existing(existingPath);
+        assert(existing.open(QIODevice::WriteOnly));
+        assert(existing.write("keep-existing-output") == 20);
+        existing.close();
+
+        std::atomic<bool> cancelled{false};
+        const auto result = redactly::processVideo(
+            *tools, samplePath, existingPath, *info, {}, {}, cancelled);
+        assert(result.status == redactly::VideoProcessStatus::Failed);
+        assert(result.error.contains("already exists"));
+        assert(existing.open(QIODevice::ReadOnly));
+        assert(existing.readAll() == "keep-existing-output");
+        std::puts("existing output preservation: ok");
+    }
+
     const QString bogusPath = tempDir.filePath("bogus.mp4");
     {
         QFile bogus(bogusPath);

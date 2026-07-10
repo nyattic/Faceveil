@@ -27,7 +27,9 @@ The first time you use a built-in model, Redactly downloads it once (3–17 MB) 
 
 Originals are never modified. Enable **Review each image** to inspect detections before saving, exclude false positives, add missed faces, leave an image unsaved, or explicitly copy the original.
 
-Redactly refuses to start if two inputs would write to the same output path, so existing results are not silently overwritten.
+Redactly refuses to start if two inputs would write to the same output path or if any planned output already exists, so results are never silently overwritten. Move or rename existing results before running the same batch again.
+
+When every item is processed and redacted successfully, the run finishes as **Done**. If any file fails, is skipped, or is saved without a detected region, Redactly finishes as **Review required** and shows a summary. Treat that state as incomplete, use the activity log to identify the affected files, and inspect them before sharing.
 
 Supported inputs: `.jpg` `.jpeg` `.png` `.bmp` `.tif` `.tiff` `.webp` images, and `.mp4` `.mov` `.m4v` videos (H.264/HEVC, 8-bit SDR). Video support is currently in **beta** — check the output before sharing it. On Linux the video pipeline is covered by automated tests but has not been manually tested yet.
 
@@ -104,6 +106,8 @@ ctest --test-dir build --output-on-failure
 ```
 
 The video I/O tests exercise a real FFmpeg round trip and are skipped when FFmpeg is not installed.
+
+Out-of-tree CMake directories matching `build*/` are ignored by Git, as are local ONNX models, generated output, package artifacts, incomplete downloads, logs, and common IDE files. Source files, workflows, translations, assets, and documentation remain tracked.
 
 Packaging scripts: [`scripts/package_macos.sh`](scripts/package_macos.sh), [`scripts/package_windows.ps1`](scripts/package_windows.ps1), [`scripts/package_linux.sh`](scripts/package_linux.sh), [`scripts/notarize_macos.sh`](scripts/notarize_macos.sh).
 

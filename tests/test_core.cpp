@@ -3,7 +3,9 @@
 #include "redactly/ImageScanner.hpp"
 #include "redactly/Mosaic.hpp"
 #include "redactly/OnnxGraphPatch.hpp"
+#include "redactly/OutputPlan.hpp"
 #include "redactly/PathSafety.hpp"
+#include "redactly/ProcessorWorker.hpp"
 #include "redactly/ScrfdFaceDetector.hpp"
 
 #include <opencv2/core.hpp>
@@ -19,6 +21,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -72,6 +75,77 @@ namespace
         }
         assert(relativePaths.contains("one.JPG"));
         assert(relativePaths.contains("nested/two.png"));
+    }
+
+    void testOutputPlanRejectsExistingAndDuplicateDestinations()
+    {
+        QTemporaryDir temp;
+        assert(temp.isValid());
+        const std::filesystem::path root(temp.path().toStdString());
+        const auto output = root / "out";
+        assert(std::filesystem::create_directories(output / "nested"));
+
+        const std::vector<redactly::ScanResult> unique = {
+            {root / "input" / "one.jpg", "one.jpg"},
+            {root / "input" / "two.mov", "nested/two.mov"},
+        };
+        assert(redactly::findOutputConflicts(unique, output).empty());
+        assert(redactly::outputRelativePath(unique[1]) == std::filesystem::path("nested/two.mp4"));
+
+        writeBytes(QString::fromStdString((output / "one.jpg").string()));
+        const auto existing = redactly::findOutputConflicts(unique, output);
+        assert(existing.size() == 1);
+        assert(existing[0].kind == redactly::OutputConflict::Kind::ExistingDestination);
+
+        const std::vector<redactly::ScanResult> duplicate = {
+            {root / "a" / "same.jpg", "same.jpg"},
+            {root / "b" / "same.jpg", "same.jpg"},
+        };
+        const auto collisions = redactly::findOutputConflicts(duplicate, output);
+        assert(collisions.size() == 1);
+        assert(collisions[0].kind == redactly::OutputConflict::Kind::DuplicateDestination);
+    }
+
+    void testWorkerReportsUnredactedOutputAsWarningAndPreservesIt()
+    {
+        QTemporaryDir temp;
+        assert(temp.isValid());
+        const auto root = std::filesystem::path(temp.path().toStdString());
+        const auto source = root / "input.png";
+        const auto output = root / "out";
+        assert(cv::imwrite(source.string(), cv::Mat(24, 24, CV_8UC3, cv::Scalar(20, 40, 60))));
+
+        auto makeWorker = [&]
+        {
+            redactly::ProcessingRequest request;
+            request.inputs = {QString::fromStdString(source.string())};
+            request.outputDirectory = QString::fromStdString(output.string());
+            request.recursive = false;
+            request.detectFaces = false;
+            return std::make_unique<redactly::ProcessorWorker>(std::move(request));
+        };
+
+        redactly::RunOutcome firstOutcome = redactly::RunOutcome::Failed;
+        redactly::RunSummary firstSummary;
+        auto first = makeWorker();
+        QObject::connect(first.get(), &redactly::ProcessorWorker::summaryAvailable,
+                         [&](const redactly::RunSummary summary) { firstSummary = summary; });
+        QObject::connect(first.get(), &redactly::ProcessorWorker::finished,
+                         [&](const redactly::RunOutcome outcome) { firstOutcome = outcome; });
+        first->process();
+        assert(firstOutcome == redactly::RunOutcome::CompletedWithWarnings);
+        assert(firstSummary.total == 1 && firstSummary.redacted == 0 &&
+               firstSummary.unredacted == 1);
+        assert(std::filesystem::exists(output / "input.png"));
+
+        const auto savedSize = std::filesystem::file_size(output / "input.png");
+        redactly::RunOutcome secondOutcome = redactly::RunOutcome::Completed;
+        auto second = makeWorker();
+        QObject::connect(second.get(), &redactly::ProcessorWorker::finished,
+                         [&](const redactly::RunOutcome outcome) { secondOutcome = outcome; });
+        second->process();
+        assert(secondOutcome == redactly::RunOutcome::Failed);
+        assert(std::filesystem::file_size(output / "input.png") == savedSize);
     }
 
     void testApplyMosaicTouchesOnlyDetectedRegion()
@@ -414,6 +488,8 @@ int main()
 {
     testSupportedImageExtensions();
     testScanImagesRecursesAndDeduplicates();
+    testOutputPlanRejectsExistingAndDuplicateDestinations();
+    testWorkerReportsUnredactedOutputAsWarningAndPreservesIt();
     testApplyMosaicTouchesOnlyDetectedRegion();
     testSoftEdgesKeepDetectedRegionFullyCovered();
     testSoftEdgesEllipseKeepsCoreCovered();

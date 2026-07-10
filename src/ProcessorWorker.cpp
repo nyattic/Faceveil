@@ -3,6 +3,7 @@
 #include "redactly/ImageIo.hpp"
 #include "redactly/ImageScanner.hpp"
 #include "redactly/OrderedParallel.hpp"
+#include "redactly/OutputPlan.hpp"
 #include "redactly/PathSafety.hpp"
 #include "redactly/PathUtil.hpp"
 #include "redactly/PlateDetector.hpp"
@@ -24,13 +25,11 @@
 #include <opencv2/imgproc.hpp>
 
 #include <algorithm>
-#include <cctype>
 #include <exception>
 #include <filesystem>
 #include <random>
 #include <system_error>
 #include <thread>
-#include <unordered_map>
 
 namespace redactly
 {
@@ -114,57 +113,6 @@ namespace redactly
             return scaled;
         }
 
-        std::filesystem::path outputRelativePath(const ScanResult &item)
-        {
-            if (isSupportedVideo(item.sourcePath))
-            {
-                auto relative = item.relativePath;
-                relative.replace_extension(".mp4");
-                return relative;
-            }
-            return item.relativePath;
-        }
-
-        std::string destinationKey(const std::filesystem::path &path)
-        {
-            auto key = pathToUtf8(path.lexically_normal());
-#if defined(_WIN32) || defined(__APPLE__)
-            std::ranges::transform(key, key.begin(), [](unsigned char ch)
-            {
-                return static_cast<char>(std::tolower(ch));
-            });
-#endif
-            return key;
-        }
-
-        bool hasDestinationCollisions(const std::vector<ScanResult> &images,
-                                      const std::filesystem::path &safeRoot,
-                                      QStringList &messages)
-        {
-            std::unordered_map<std::string, std::filesystem::path> firstSourceForDestination;
-            for (const auto &item: images)
-            {
-                const auto destination = (safeRoot / outputRelativePath(item)).lexically_normal();
-                const auto key = destinationKey(destination);
-                const auto [it, inserted] = firstSourceForDestination.emplace(key, item.sourcePath);
-                if (!inserted)
-                {
-                    messages.push_back(QCoreApplication::translate("redactly::ProcessorWorker",
-                                                                   "Output name collision: '%1' and '%2' would both write to '%3'")
-                        .arg(pathToQString(it->second),
-                             pathToQString(item.sourcePath),
-                             pathToQString(destination)));
-                    if (messages.size() >= 10)
-                    {
-                        messages.push_back(QCoreApplication::translate("redactly::ProcessorWorker",
-                                                                       "Additional output name collisions omitted."));
-                        return true;
-                    }
-                }
-            }
-            return !messages.empty();
-        }
-
         std::filesystem::path uniqueTempPath(const std::filesystem::path &destination)
         {
             static thread_local std::mt19937_64 rng{std::random_device{}()};
@@ -180,6 +128,11 @@ namespace redactly
         bool atomicImwrite(const std::filesystem::path &destination, const cv::Mat &image,
                            const std::vector<int> &params = {})
         {
+            std::error_code existsError;
+            if (std::filesystem::exists(destination, existsError) || existsError)
+            {
+                return false;
+            }
             const auto temp = uniqueTempPath(destination);
             if (!imwriteUnicode(temp, image, params))
             {
@@ -192,7 +145,7 @@ namespace redactly
             if (ec)
             {
                 std::filesystem::copy_file(temp, destination,
-                                           std::filesystem::copy_options::overwrite_existing, ec);
+                                           std::filesystem::copy_options::none, ec);
                 std::error_code removeEc;
                 std::filesystem::remove(temp, removeEc);
                 if (ec)
@@ -235,7 +188,7 @@ namespace redactly
     struct ProcessorWorker::ItemOutcome
     {
         QStringList logs;
-        int anonymized = 0;
+        int redacted = 0;
         int copied = 0;
         int skipped = 0;
         int failed = 0;
@@ -243,50 +196,29 @@ namespace redactly
         bool cancelled = false;
     };
 
-    ProcessorWorker::ProcessorWorker(QString modelPath,
-                                     QStringList inputs,
-                                     QString outputDirectory,
-                                     bool recursive,
-                                     float scoreThreshold,
-                                     float nmsThreshold,
-                                     int mosaicBlockSize,
-                                     float paddingRatio,
-                                     AnonymizationMethod method,
-                                     MaskShape shape,
-                                     bool softEdges,
-                                     bool preserveMetadata,
-                                     bool reviewEnabled,
-                                     QObject *reviewReceiver,
-                                     std::shared_ptr<ScrfdFaceDetector> cachedDetector,
-                                     bool detectFaces,
-                                     bool detectPlates,
-                                     QString plateModelPath,
-                                     std::shared_ptr<PlateDetector> cachedPlateDetector,
-                                     bool gpuAcceleration,
-                                     int videoCrf,
-                                     std::shared_ptr<ScrfdFaceDetector> cachedVideoDetector)
-        : modelPath_(std::move(modelPath)),
-          inputs_(std::move(inputs)),
-          outputDirectory_(std::move(outputDirectory)),
-          recursive_(recursive),
-          scoreThreshold_(scoreThreshold),
-          nmsThreshold_(nmsThreshold),
-          mosaicBlockSize_(mosaicBlockSize),
-          paddingRatio_(paddingRatio),
-          method_(method),
-          shape_(shape),
-          softEdges_(softEdges),
-          preserveMetadata_(preserveMetadata),
-          reviewEnabled_(reviewEnabled),
-          reviewReceiver_(reviewReceiver),
-          detectFaces_(detectFaces),
-          detectPlates_(detectPlates),
-          plateModelPath_(std::move(plateModelPath)),
-          gpuAcceleration_(gpuAcceleration),
-          videoCrf_(videoCrf),
-          detector_(std::move(cachedDetector)),
-          plateDetector_(std::move(cachedPlateDetector)),
-          videoDetector_(std::move(cachedVideoDetector))
+    ProcessorWorker::ProcessorWorker(ProcessingRequest request, DetectorCache cache)
+        : modelPath_(std::move(request.modelPath)),
+          inputs_(std::move(request.inputs)),
+          outputDirectory_(std::move(request.outputDirectory)),
+          recursive_(request.recursive),
+          scoreThreshold_(request.scoreThreshold),
+          nmsThreshold_(request.nmsThreshold),
+          mosaicBlockSize_(request.mosaicBlockSize),
+          paddingRatio_(request.paddingRatio),
+          method_(request.method),
+          shape_(request.shape),
+          softEdges_(request.softEdges),
+          preserveMetadata_(request.preserveMetadata),
+          reviewEnabled_(request.reviewEnabled),
+          reviewReceiver_(request.reviewReceiver),
+          detectFaces_(request.detectFaces),
+          detectPlates_(request.detectPlates),
+          plateModelPath_(std::move(request.plateModelPath)),
+          gpuAcceleration_(request.gpuAcceleration),
+          videoCrf_(request.videoCrf),
+          detector_(std::move(cache.face)),
+          plateDetector_(std::move(cache.plate)),
+          videoDetector_(std::move(cache.videoFace))
     {
     }
 
@@ -409,21 +341,34 @@ namespace redactly
                                       ? outputRoot.lexically_normal()
                                       : canonicalRoot;
 
-            QStringList collisionMessages;
-            if (hasDestinationCollisions(images, safeRoot, collisionMessages))
+            const auto outputConflicts = findOutputConflicts(images, safeRoot);
+            if (!outputConflicts.empty())
             {
-                emit logMessage(tr("Refusing to run because multiple inputs would write to the same output path."));
-                for (const auto &message: collisionMessages)
+                emit logMessage(tr("Refusing to run because an output path is already in use."));
+                for (const auto &conflict: outputConflicts)
                 {
-                    emit logMessage(message);
+                    if (conflict.kind == OutputConflict::Kind::DuplicateDestination)
+                    {
+                        emit logMessage(tr("Output name collision: '%1' and '%2' would both write to '%3'")
+                            .arg(pathToQString(conflict.otherSource),
+                                 pathToQString(conflict.source),
+                                 pathToQString(conflict.destination)));
+                    }
+                    else
+                    {
+                        emit logMessage(tr("Existing output would be overwritten: '%1'")
+                            .arg(pathToQString(conflict.destination)));
+                    }
                 }
+                if (outputConflicts.size() >= 10)
+                    emit logMessage(tr("Additional output conflicts omitted."));
                 emit finished(RunOutcome::Failed);
                 return;
             }
-            emit logMessage(tr("Preflight: output paths are unique."));
+            emit logMessage(tr("Preflight: output paths are available."));
 
             int completed = 0;
-            int anonymizedCount = 0;
+            int redactedCount = 0;
             int copiedCount = 0;
             int skippedCount = 0;
             int failedCount = 0;
@@ -435,7 +380,7 @@ namespace redactly
                 {
                     emit logMessage(message);
                 }
-                anonymizedCount += outcome.anonymized;
+                redactedCount += outcome.redacted;
                 copiedCount += outcome.copied;
                 skippedCount += outcome.skipped;
                 failedCount += outcome.failed;
@@ -508,8 +453,18 @@ namespace redactly
             }
 
             emit logMessage(
-                tr("Summary: %1 anonymized, %2 copied, %3 skipped, %4 failed (of %5).")
-                    .arg(anonymizedCount).arg(copiedCount).arg(skippedCount).arg(failedCount).arg(total));
+                tr("Summary: %1 redacted, %2 saved without redaction, %3 copied, %4 skipped, %5 failed (of %6).")
+                    .arg(redactedCount).arg(unredactedCount).arg(copiedCount).arg(skippedCount)
+                    .arg(failedCount).arg(total));
+
+            RunSummary summary;
+            summary.total = total;
+            summary.redacted = redactedCount;
+            summary.copied = copiedCount;
+            summary.skipped = skippedCount;
+            summary.failed = failedCount;
+            summary.unredacted = unredactedCount;
+            emit summaryAvailable(summary);
 
             if (unredactedCount > 0)
             {
@@ -524,8 +479,16 @@ namespace redactly
                 return;
             }
 
-            emit logMessage(tr("Done."));
-            emit finished(RunOutcome::Completed);
+            if (failedCount > 0 || skippedCount > 0 || unredactedCount > 0)
+            {
+                emit logMessage(tr("Completed with warnings. Review the summary before sharing."));
+                emit finished(RunOutcome::CompletedWithWarnings);
+            }
+            else
+            {
+                emit logMessage(tr("Done."));
+                emit finished(RunOutcome::Completed);
+            }
         } catch (const std::exception &exception)
         {
             emit logMessage(tr("Error: %1").arg(exception.what()));
@@ -735,7 +698,7 @@ namespace redactly
                 {
                     std::error_code copyError;
                     std::filesystem::copy_file(source, destination,
-                                               std::filesystem::copy_options::overwrite_existing,
+                                               std::filesystem::copy_options::none,
                                                copyError);
                     copied = !copyError;
                 }
@@ -788,8 +751,8 @@ namespace redactly
                         tr("Redacted %n region(s): %1", nullptr,
                            static_cast<int>(finalFaces.size()))
                             .arg(fileName));
+                    outcome.redacted = 1;
                 }
-                outcome.anonymized = 1;
             }
         } catch (const std::exception &exception)
         {
@@ -970,6 +933,7 @@ namespace redactly
                     outcome.logs.push_back(
                         tr("Redacted %n region(s): %1", nullptr, result.trackCount)
                             .arg(fileName));
+                    outcome.redacted = 1;
                 }
                 if (const double elapsedSeconds = totalTimer.elapsed() / 1000.0;
                     elapsedSeconds > 0 && info->fps() > 0)
@@ -987,7 +951,6 @@ namespace redactly
                     outcome.logs.push_back(
                         tr("Video encoder: %1").arg(result.encoderName));
                 }
-                outcome.anonymized = 1;
                 break;
             case VideoProcessStatus::Cancelled:
                 outcome.cancelled = true;
