@@ -234,6 +234,34 @@ namespace
         assert(image.at<cv::Vec3b>(31, 31) == cv::Vec3b(0, 0, 0));
     }
 
+    void testSoftEdgesUsePaddingForAGradualTransition()
+    {
+        cv::Mat image(96, 96, CV_8UC3, cv::Scalar(100, 100, 100));
+        const cv::Rect box(32, 32, 32, 32);
+
+        redactly::FaceDetections detections;
+        detections.push_back({cv::Rect2f(box), 1.0F});
+        redactly::applyAnonymization(image, detections, redactly::AnonymizationMethod::Fill,
+                                     4, 0.25F, redactly::MaskShape::Rectangle, true);
+
+        for (int y = box.y; y < box.y + box.height; ++y)
+        {
+            for (int x = box.x; x < box.x + box.width; ++x)
+            {
+                assert(image.at<cv::Vec3b>(y, x) == cv::Vec3b(0, 0, 0));
+            }
+        }
+
+        const cv::Vec3b innerBlend = image.at<cv::Vec3b>(48, 25);
+        assert(innerBlend != cv::Vec3b(0, 0, 0));
+        assert(innerBlend != cv::Vec3b(100, 100, 100));
+
+        const cv::Vec3b outerBlend = image.at<cv::Vec3b>(48, 23);
+        assert(outerBlend != cv::Vec3b(0, 0, 0));
+        assert(outerBlend != cv::Vec3b(100, 100, 100));
+        assert(image.at<cv::Vec3b>(48, 16) == cv::Vec3b(100, 100, 100));
+    }
+
     void testOrientationTransforms()
     {
         cv::Mat base(2, 3, CV_8UC1);
@@ -494,6 +522,7 @@ int main()
     testSoftEdgesKeepDetectedRegionFullyCovered();
     testSoftEdgesEllipseKeepsCoreCovered();
     testSoftEdgesAtImageBorderStayInBounds();
+    testSoftEdgesUsePaddingForAGradualTransition();
     testOrientationTransforms();
     testEncodeParams();
     testIntersectionOverUnion();

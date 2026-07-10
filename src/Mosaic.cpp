@@ -82,14 +82,31 @@ namespace redactly
             roi.setTo(cv::Scalar(0, 0, 0));
         }
 
-        constexpr float kFeatherRatio = 0.15F;
-        constexpr int kMinFeather = 4;
+        constexpr float kInnerTransitionRatio = 0.12F;
+        constexpr float kOuterTransitionRatio = 0.10F;
+        constexpr int kMinOuterTransition = 4;
         constexpr int kSizeQuantum = 4;
 
-        int featherSizeFor(const cv::Rect &region)
+        int outerTransitionFor(const cv::Rect &region)
         {
             const int base = std::min(region.width, region.height);
-            return std::max(kMinFeather, static_cast<int>(std::lround(static_cast<float>(base) * kFeatherRatio)));
+            return std::max(kMinOuterTransition,
+                            static_cast<int>(std::lround(
+                                static_cast<float>(base) * kOuterTransitionRatio)));
+        }
+
+        int innerTransitionFor(const cv::Rect &region, const cv::Rect &detected)
+        {
+            const int available = std::max(0, std::min({detected.x - region.x,
+                                                       detected.y - region.y,
+                                                       region.x + region.width
+                                                           - detected.x - detected.width,
+                                                       region.y + region.height
+                                                           - detected.y - detected.height}));
+            const int target = static_cast<int>(std::lround(
+                static_cast<float>(std::min(region.width, region.height))
+                * kInnerTransitionRatio));
+            return std::min(available, target);
         }
 
         cv::Rect quantizeRegionSize(const cv::Rect &region, int quantum)
@@ -103,40 +120,50 @@ namespace redactly
             return {region.x, region.y, qw, qh};
         }
 
-        cv::Mat softCoreMask(const cv::Size &size, const cv::Rect &core, MaskShape shape, int feather)
+        cv::Mat softTransitionMask(const cv::Size &size, const cv::Rect &core, MaskShape shape,
+                                   int innerTransition, int outerTransition)
         {
-            cv::Mat outside(size, CV_8UC1, cv::Scalar(255));
+            cv::Mat inside(size, CV_8UC1, cv::Scalar(0));
             if (shape == MaskShape::Ellipse)
             {
-                cv::ellipse(outside,
+                cv::ellipse(inside,
                             cv::Point(core.x + core.width / 2, core.y + core.height / 2),
                             cv::Size(core.width / 2, core.height / 2),
-                            0.0, 0.0, 360.0, cv::Scalar(0), cv::FILLED, cv::LINE_8);
+                            0.0, 0.0, 360.0, cv::Scalar(255), cv::FILLED, cv::LINE_8);
             }
             else
             {
-                cv::rectangle(outside, core, cv::Scalar(0), cv::FILLED);
+                cv::rectangle(inside, core, cv::Scalar(255), cv::FILLED);
             }
 
-            cv::Mat distance;
-            cv::distanceTransform(outside, distance, cv::DIST_L2, cv::DIST_MASK_PRECISE);
+            cv::Mat outside;
+            cv::bitwise_not(inside, outside);
+            cv::Mat insideDistance;
+            cv::Mat outsideDistance;
+            cv::distanceTransform(inside, insideDistance, cv::DIST_L2, cv::DIST_MASK_PRECISE);
+            cv::distanceTransform(outside, outsideDistance, cv::DIST_L2, cv::DIST_MASK_PRECISE);
 
-            cv::Mat ramp = 1.0F - distance / static_cast<float>(feather);
+            const float transition = static_cast<float>(innerTransition + outerTransition);
+            cv::Mat ramp = (insideDistance - outsideDistance
+                            + static_cast<float>(outerTransition)) / transition;
             ramp = cv::min(ramp, 1.0F);
             ramp = cv::max(ramp, 0.0F);
             return ramp.mul(ramp).mul(3.0F - 2.0F * ramp);
         }
 
-        using MaskKey = std::tuple<int, int, int, int, int, int, int, int>;
+        using MaskKey = std::tuple<int, int, int, int, int, int, int, int, int>;
 
         std::mutex g_maskCacheMutex;
         std::map<MaskKey, cv::Mat> g_maskCache;
         constexpr std::size_t kMaskCacheCap = 2048;
 
-        cv::Mat cachedSoftCoreMask(const cv::Size &size, const cv::Rect &core, MaskShape shape, int feather)
+        cv::Mat cachedSoftTransitionMask(const cv::Size &size, const cv::Rect &core,
+                                         MaskShape shape, int innerTransition,
+                                         int outerTransition)
         {
             const MaskKey key{size.width, size.height, core.x, core.y,
-                              core.width, core.height, static_cast<int>(shape), feather};
+                              core.width, core.height, static_cast<int>(shape),
+                              innerTransition, outerTransition};
             {
                 const std::lock_guard<std::mutex> lock(g_maskCacheMutex);
                 const auto it = g_maskCache.find(key);
@@ -146,7 +173,8 @@ namespace redactly
                 }
             }
 
-            cv::Mat mask = softCoreMask(size, core, shape, feather);
+            cv::Mat mask = softTransitionMask(size, core, shape, innerTransition,
+                                              outerTransition);
 
             const std::lock_guard<std::mutex> lock(g_maskCacheMutex);
             if (g_maskCache.size() >= kMaskCacheCap)
@@ -216,14 +244,16 @@ namespace redactly
             if (softEdges)
             {
                 const cv::Rect qRect = quantizeRegionSize(roiRect, kSizeQuantum);
-                const int feather = featherSizeFor(qRect);
-                const int canonX = qRect.x - feather;
-                const int canonY = qRect.y - feather;
+                const cv::Rect detectedRect = paddedRegion(detection.box, width, height, 0.0F);
+                const int innerTransition = innerTransitionFor(qRect, detectedRect);
+                const int outerTransition = outerTransitionFor(qRect);
+                const int canonX = qRect.x - outerTransition;
+                const int canonY = qRect.y - outerTransition;
 
                 const int outerX = std::max(0, canonX);
                 const int outerY = std::max(0, canonY);
-                const int outerRight = std::min(width, qRect.x + qRect.width + feather);
-                const int outerBottom = std::min(height, qRect.y + qRect.height + feather);
+                const int outerRight = std::min(width, qRect.x + qRect.width + outerTransition);
+                const int outerBottom = std::min(height, qRect.y + qRect.height + outerTransition);
                 if (outerRight <= outerX || outerBottom <= outerY)
                 {
                     continue;
@@ -234,9 +264,12 @@ namespace redactly
                 cv::Mat anonymized = roi.clone();
                 applyEffect(anonymized, method, blockSize);
 
-                const cv::Size canonicalSize(qRect.width + 2 * feather, qRect.height + 2 * feather);
-                const cv::Rect core(feather, feather, qRect.width, qRect.height);
-                const cv::Mat canonical = cachedSoftCoreMask(canonicalSize, core, shape, feather);
+                const cv::Size canonicalSize(qRect.width + 2 * outerTransition,
+                                             qRect.height + 2 * outerTransition);
+                const cv::Rect core(outerTransition, outerTransition,
+                                    qRect.width, qRect.height);
+                const cv::Mat canonical = cachedSoftTransitionMask(
+                    canonicalSize, core, shape, innerTransition, outerTransition);
                 const cv::Rect slice(outerX - canonX, outerY - canonY, outer.width, outer.height);
                 blendWithMask(roi, anonymized, canonical(slice));
                 continue;
