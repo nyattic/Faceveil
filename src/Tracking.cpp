@@ -456,7 +456,7 @@ namespace redactly
             const float inverse = 1.0F / static_cast<float>(count);
             const cv::Rect2f smoothed{accumulated.x * inverse, accumulated.y * inverse,
                                       accumulated.width * inverse, accumulated.height * inverse};
-            constexpr float kMaxSmoothingAreaGrowth = 1.25F;
+            constexpr float kMaxSmoothingAreaGrowth = 1.15F;
             const float originalArea = original[i].box.area();
             if (original[i].interpolated)
             {

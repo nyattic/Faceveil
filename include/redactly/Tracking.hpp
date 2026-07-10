@@ -71,9 +71,9 @@ namespace redactly
 
     struct TrackPostProcessConfig
     {
-        int maxInterpolationGap = 20;
+        int maxInterpolationGap = 10;
         int smoothingRadius = 2;
-        int extensionFrames = 3;
+        int extensionFrames = 1;
         float strongScoreThreshold = 0.5F;
         int minStrongDetections = 3;
         int shortTrackMinStrong = 2;
