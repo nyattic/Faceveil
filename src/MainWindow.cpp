@@ -1140,6 +1140,7 @@ namespace redactly
         request.detectPlates = detectPlates;
         request.gpuAcceleration = gpuAcceleration_;
         request.videoCrf = crfForQuality(static_cast<VideoQuality>(videoQuality_));
+        request.videoCodec = static_cast<VideoCodec>(videoCodec_);
 
         DetectorCache cache;
         cache.face = std::move(detectorForRun);
@@ -1370,6 +1371,7 @@ namespace redactly
         fileLogging_ = settings.value("fileLogging", true).toBool();
         gpuAcceleration_ = settings.value("gpuAcceleration", true).toBool();
         videoQuality_ = std::clamp(settings.value("videoQuality", 0).toInt(), 0, 2);
+        videoCodec_ = std::clamp(settings.value("videoCodec", 0).toInt(), 0, 1);
 
         const auto savedLanguage = settings.value("language").toString();
         QString language = savedLanguage;
@@ -1422,6 +1424,7 @@ namespace redactly
         settings.setValue("fileLogging", fileLogging_);
         settings.setValue("gpuAcceleration", gpuAcceleration_);
         settings.setValue("videoQuality", videoQuality_);
+        settings.setValue("videoCodec", videoCodec_);
 
         settings.setValue("language", language_);
     }
@@ -1476,7 +1479,7 @@ namespace redactly
     void MainWindow::openSettings()
     {
         SettingsDialog dialog(themeMode_, language_, checkForUpdatesOnStartup_, fileLogging_,
-                              gpuAcceleration_, videoQuality_, this);
+                              gpuAcceleration_, videoQuality_, videoCodec_, this);
 
         connect(&dialog, &SettingsDialog::themeChanged, this, [this](ThemeMode mode)
         {
@@ -1506,6 +1509,11 @@ namespace redactly
         connect(&dialog, &SettingsDialog::videoQualityChanged, this, [this](int quality)
         {
             videoQuality_ = std::clamp(quality, 0, 2);
+            saveSettings();
+        });
+        connect(&dialog, &SettingsDialog::videoCodecChanged, this, [this](int codec)
+        {
+            videoCodec_ = std::clamp(codec, 0, 1);
             saveSettings();
         });
         connect(&dialog, &SettingsDialog::gpuAccelerationChanged, this, [this](bool enabled)

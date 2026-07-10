@@ -33,6 +33,12 @@ namespace redactly
         SpaceSaver,
     };
 
+    enum class VideoCodec
+    {
+        H264,
+        Hevc,
+    };
+
     int crfForQuality(VideoQuality quality);
 
     struct VideoInfo
@@ -106,7 +112,8 @@ namespace redactly
                   const QString &audioSource,
                   const VideoInfo &info,
                   int crf,
-                  bool hardwareEncoder = true);
+                  bool hardwareEncoder = true,
+                  VideoCodec codec = VideoCodec::H264);
         bool writeFrame(const cv::Mat &frame);
         bool finish();
         void abort();

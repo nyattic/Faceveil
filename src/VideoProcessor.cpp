@@ -202,7 +202,7 @@ namespace redactly
         }
         VideoFrameWriter writer;
         if (!writer.open(tools, destinationPath, sourcePath, info, options.crf,
-                         options.hardwareEncoder))
+                         options.hardwareEncoder, options.codec))
         {
             result.error = writer.errorString();
             return result;

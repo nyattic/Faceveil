@@ -2,6 +2,7 @@
 
 #include "redactly/ImageScanner.hpp"
 #include "redactly/Mosaic.hpp"
+#include "redactly/VideoIo.hpp"
 
 #include <QObject>
 #include <QPointer>
@@ -39,6 +40,7 @@ namespace redactly
         bool detectPlates = false;
         bool gpuAcceleration = false;
         int videoCrf = 18;
+        VideoCodec videoCodec = VideoCodec::H264;
     };
 
     struct DetectorCache
@@ -130,6 +132,7 @@ namespace redactly
         QString plateModelPath_;
         bool gpuAcceleration_;
         int videoCrf_;
+        VideoCodec videoCodec_;
         std::atomic<bool> cancelled_{false};
         std::mutex detectMutex_;
         std::shared_ptr<ScrfdFaceDetector> detector_;

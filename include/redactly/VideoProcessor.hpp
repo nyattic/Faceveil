@@ -23,6 +23,7 @@ namespace redactly
         MaskShape shape = MaskShape::Rectangle;
         bool softEdges = false;
         int crf = 18;
+        VideoCodec codec = VideoCodec::H264;
         int analysisLongEdge = 960;
         bool hardwareEncoder = true;
         TrackerConfig tracker;

@@ -171,6 +171,7 @@ namespace redactly
         bool fileLogging_ = true;
         bool gpuAcceleration_ = true;
         int videoQuality_ = 0;
+        int videoCodec_ = 0;
         bool shuttingDown_ = false;
         RunSummary lastRunSummary_;
         std::vector<std::function<void()>> retranslators_;

@@ -219,42 +219,53 @@ namespace redactly
             return process.errorString();
         }
 
-        QStringList hardwareEncoderCandidates()
+        QString codecPrefix(const VideoCodec codec)
         {
-#if defined(_WIN32)
-            return {QStringLiteral("h264_nvenc"), QStringLiteral("h264_amf"),
-                    QStringLiteral("h264_qsv")};
+            return codec == VideoCodec::Hevc ? QStringLiteral("hevc")
+                                             : QStringLiteral("h264");
+        }
+
+        QString softwareEncoderName(const VideoCodec codec)
+        {
+            return codec == VideoCodec::Hevc ? QStringLiteral("libx265")
+                                             : QStringLiteral("libx264");
+        }
+
+        QStringList hardwareEncoderCandidates(const VideoCodec codec)
+        {
+            const QString prefix = codecPrefix(codec);
+#if defined(_WIN32) || defined(__linux__)
+            return {prefix + QStringLiteral("_nvenc"), prefix + QStringLiteral("_qsv")};
 #elif defined(__APPLE__)
-            return {QStringLiteral("h264_videotoolbox")};
+            return {prefix + QStringLiteral("_videotoolbox")};
 #else
+            Q_UNUSED(prefix);
             return {};
 #endif
         }
 
         QStringList videoEncoderArgs(const QString &encoder, const int crf)
         {
-            if (encoder == QLatin1String("h264_nvenc"))
+            const bool hevc = encoder.startsWith(QLatin1String("hevc_")) ||
+                              encoder == QLatin1String("libx265");
+            const int codecCrf = hevc ? crf + 5 : crf;
+            if (encoder.endsWith(QLatin1String("_nvenc")))
             {
-                return {"-c:v", "h264_nvenc", "-preset", "p6", "-rc", "vbr",
-                        "-cq", QString::number(crf), "-b:v", "0"};
+                return {"-c:v", encoder, "-preset", "p6", "-rc", "vbr",
+                        "-cq", QString::number(codecCrf), "-b:v", "0"};
             }
-            if (encoder == QLatin1String("h264_amf"))
+            if (encoder.endsWith(QLatin1String("_qsv")))
             {
-                return {"-c:v", "h264_amf", "-quality", "quality", "-rc", "qvbr",
-                        "-qvbr_quality_level", QString::number(crf)};
+                return {"-c:v", encoder, "-preset", "slow",
+                        "-global_quality", QString::number(codecCrf)};
             }
-            if (encoder == QLatin1String("h264_qsv"))
+            if (encoder.endsWith(QLatin1String("_videotoolbox")))
             {
-                return {"-c:v", "h264_qsv", "-preset", "slow",
-                        "-global_quality", QString::number(crf)};
-            }
-            if (encoder == QLatin1String("h264_videotoolbox"))
-            {
-                return {"-c:v", "h264_videotoolbox",
+                return {"-c:v", encoder,
                         "-q:v", QString::number(std::clamp(100 - 2 * crf, 1, 100))};
             }
-            return {"-c:v", "libx264", "-preset", "medium",
-                    "-crf", QString::number(crf)};
+            return {"-c:v", encoder, "-preset", "medium",
+                    "-crf", QString::number(codecCrf)};
         }
 
         bool encoderWorks(const FfmpegTools &tools, const QString &encoder,
@@ -285,13 +296,14 @@ namespace redactly
             return probe.exitStatus() == QProcess::NormalExit && probe.exitCode() == 0;
         }
 
-        QString selectVideoEncoder(const FfmpegTools &tools, const int width, const int height)
+        QString selectVideoEncoder(const FfmpegTools &tools, const VideoCodec codec,
+                                   const int width, const int height)
         {
             static std::mutex cacheMutex;
             static QHash<QString, bool> cache;
 
             std::lock_guard lock(cacheMutex);
-            for (const auto &encoder : hardwareEncoderCandidates())
+            for (const auto &encoder : hardwareEncoderCandidates(codec))
             {
                 const QString key =
                         QString("%1:%2x%3").arg(encoder).arg(width).arg(height);
@@ -308,7 +320,7 @@ namespace redactly
                     return encoder;
                 }
             }
-            return QStringLiteral("libx264");
+            return softwareEncoderName(codec);
         }
     }
 
@@ -757,7 +769,8 @@ namespace redactly
                                 const QString &audioSource,
                                 const VideoInfo &info,
                                 const int crf,
-                                const bool hardwareEncoder)
+                                const bool hardwareEncoder,
+                                const VideoCodec codec)
     {
         abort();
         error_.clear();
@@ -769,10 +782,10 @@ namespace redactly
             return false;
         }
 
-        encoderName_ = QStringLiteral("libx264");
+        encoderName_ = softwareEncoderName(codec);
         if (hardwareEncoder)
         {
-            encoderName_ = selectVideoEncoder(tools,
+            encoderName_ = selectVideoEncoder(tools, codec,
                                               frameWidth_ - (frameWidth_ % 2),
                                               frameHeight_ - (frameHeight_ % 2));
         }
@@ -801,6 +814,10 @@ namespace redactly
                   << "-map" << "1:a:0?"
                   << videoEncoderArgs(encoderName_, crf)
                   << "-pix_fmt" << "yuv420p";
+        if (codec == VideoCodec::Hevc)
+        {
+            arguments << "-tag:v" << "hvc1";
+        }
         if ((frameWidth_ % 2) != 0 || (frameHeight_ % 2) != 0)
         {
             arguments << "-vf"

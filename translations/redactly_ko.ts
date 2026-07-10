@@ -1113,6 +1113,22 @@ Continue?</source>
         <translation>다시 인코딩되는 동영상의 화질입니다. 화질이 높을수록 파일이 커집니다.</translation>
     </message>
     <message>
+        <source>Video codec</source>
+        <translation>동영상 코덱</translation>
+    </message>
+    <message>
+        <source>H.264 (most compatible)</source>
+        <translation>H.264 (호환성 우선)</translation>
+    </message>
+    <message>
+        <source>HEVC (smaller files)</source>
+        <translation>HEVC (용량 절약)</translation>
+    </message>
+    <message>
+        <source>Codec for re-encoded videos. HEVC produces smaller files but may not play on older devices.</source>
+        <translation>다시 인코딩되는 동영상의 코덱입니다. HEVC는 파일이 더 작지만 오래된 기기에서 재생되지 않을 수 있습니다.</translation>
+    </message>
+    <message>
         <location filename="../src/SettingsDialog.cpp" line="87"/>
         <source>Close</source>
         <translation>닫기</translation>

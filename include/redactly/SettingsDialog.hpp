@@ -19,7 +19,7 @@ namespace redactly
     public:
         SettingsDialog(ThemeMode theme, const QString &language, bool checkForUpdates,
                        bool fileLogging, bool gpuAcceleration, int videoQuality,
-                       QWidget *parent = nullptr);
+                       int videoCodec, QWidget *parent = nullptr);
 
     signals:
         void themeChanged(redactly::ThemeMode mode);
@@ -34,6 +34,8 @@ namespace redactly
 
         void videoQualityChanged(int quality);
 
+        void videoCodecChanged(int codec);
+
     protected:
         void changeEvent(QEvent *event) override;
 
@@ -43,9 +45,11 @@ namespace redactly
         QLabel *themeLabel_ = nullptr;
         QLabel *languageLabel_ = nullptr;
         QLabel *videoQualityLabel_ = nullptr;
+        QLabel *videoCodecLabel_ = nullptr;
         QComboBox *themeCombo_ = nullptr;
         QComboBox *languageCombo_ = nullptr;
         QComboBox *videoQualityCombo_ = nullptr;
+        QComboBox *videoCodecCombo_ = nullptr;
         QCheckBox *updateCheck_ = nullptr;
         QCheckBox *logCheck_ = nullptr;
         QCheckBox *gpuCheck_ = nullptr;

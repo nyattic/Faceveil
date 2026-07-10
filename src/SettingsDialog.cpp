@@ -13,7 +13,7 @@ namespace redactly
 {
     SettingsDialog::SettingsDialog(ThemeMode theme, const QString &language, bool checkForUpdates,
                                    bool fileLogging, bool gpuAcceleration, int videoQuality,
-                                   QWidget *parent)
+                                   int videoCodec, QWidget *parent)
         : QDialog(parent)
     {
         setModal(true);
@@ -48,12 +48,20 @@ namespace redactly
         const int qualityIndex = videoQualityCombo_->findData(videoQuality);
         videoQualityCombo_->setCurrentIndex(qualityIndex >= 0 ? qualityIndex : 0);
 
+        videoCodecCombo_ = new QComboBox(this);
+        videoCodecCombo_->addItem(QString(), 0);
+        videoCodecCombo_->addItem(QString(), 1);
+        const int codecIndex = videoCodecCombo_->findData(videoCodec);
+        videoCodecCombo_->setCurrentIndex(codecIndex >= 0 ? codecIndex : 0);
+
         themeLabel_ = new QLabel(this);
         languageLabel_ = new QLabel(this);
         videoQualityLabel_ = new QLabel(this);
+        videoCodecLabel_ = new QLabel(this);
         form->addRow(themeLabel_, themeCombo_);
         form->addRow(languageLabel_, languageCombo_);
         form->addRow(videoQualityLabel_, videoQualityCombo_);
+        form->addRow(videoCodecLabel_, videoCodecCombo_);
         root->addLayout(form);
 
         updateCheck_ = new QCheckBox(this);
@@ -98,6 +106,10 @@ namespace redactly
         {
             emit videoQualityChanged(videoQualityCombo_->currentData().toInt());
         });
+        connect(videoCodecCombo_, &QComboBox::currentIndexChanged, this, [this]
+        {
+            emit videoCodecChanged(videoCodecCombo_->currentData().toInt());
+        });
         connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
         retranslate();
@@ -124,6 +136,11 @@ namespace redactly
         videoQualityCombo_->setItemText(2, tr("Smaller files"));
         videoQualityCombo_->setToolTip(tr("Quality of re-encoded videos. "
                                           "Higher quality produces larger files."));
+        videoCodecLabel_->setText(tr("Video codec"));
+        videoCodecCombo_->setItemText(0, tr("H.264 (most compatible)"));
+        videoCodecCombo_->setItemText(1, tr("HEVC (smaller files)"));
+        videoCodecCombo_->setToolTip(tr("Codec for re-encoded videos. HEVC produces "
+                                        "smaller files but may not play on older devices."));
         if (closeButton_ != nullptr)
         {
             closeButton_->setText(tr("Close"));

@@ -218,6 +218,7 @@ namespace redactly
           plateModelPath_(std::move(request.plateModelPath)),
           gpuAcceleration_(request.gpuAcceleration),
           videoCrf_(request.videoCrf),
+          videoCodec_(request.videoCodec),
           detector_(std::move(cache.face)),
           plateDetector_(std::move(cache.plate)),
           videoDetector_(std::move(cache.videoFace))
@@ -828,6 +829,7 @@ namespace redactly
         options.shape = shape_;
         options.softEdges = softEdges_;
         options.crf = videoCrf_;
+        options.codec = videoCodec_;
         options.hardwareEncoder = gpuAcceleration_;
 
         if (detector_ && !videoDetector_)

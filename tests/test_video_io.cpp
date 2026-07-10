@@ -189,6 +189,42 @@ int main(int argc, char **argv)
     std::puts("output verification: ok");
 
     {
+        QProcess encoders;
+        encoders.start(tools->ffmpegPath, {"-v", "error", "-encoders"});
+        encoders.waitForStarted(15000);
+        encoders.waitForFinished(60000);
+        const QString encoderList = QString::fromUtf8(encoders.readAllStandardOutput());
+        if (encoderList.contains("libx265"))
+        {
+            const QString hevcPath = tempDir.filePath("out/hevc.mp4");
+            redactly::VideoFrameReader hevcReader;
+            assert(hevcReader.open(*tools, samplePath, *info));
+            redactly::VideoFrameWriter hevcWriter;
+            assert(hevcWriter.open(*tools, hevcPath, samplePath, *info,
+                                   redactly::crfForQuality(redactly::VideoQuality::Balanced),
+                                   false, redactly::VideoCodec::Hevc));
+            assert(hevcWriter.encoderName() == "libx265");
+            cv::Mat hevcFrame;
+            while (hevcReader.readFrame(hevcFrame))
+            {
+                assert(hevcWriter.writeFrame(hevcFrame));
+            }
+            assert(hevcWriter.finish());
+
+            const auto hevcInfo = redactly::probeVideo(*tools, hevcPath, &probeError);
+            assert(hevcInfo.has_value());
+            assert(hevcInfo->videoCodec == "hevc");
+            assert(hevcInfo->hasAudio);
+            assert(rawProbeOutput(*tools, hevcPath).contains("hvc1"));
+            std::puts("hevc round trip: ok");
+        }
+        else
+        {
+            std::puts("hevc round trip: skipped (libx265 unavailable)");
+        }
+    }
+
+    {
         const QString existingPath = tempDir.filePath("out/existing.mp4");
         QFile existing(existingPath);
         assert(existing.open(QIODevice::WriteOnly));
