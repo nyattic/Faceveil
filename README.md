@@ -43,7 +43,7 @@ Videos are processed in two passes — detection with bidirectional tracking, th
 
 ## Build from source
 
-Requires CMake 3.24+, a C++20 compiler, Qt 6.11.1+ available to CMake (with the Linguist tools for UI translations; Qt Svg is optional and gives a crisp settings icon, falling back to a glyph without it), OpenCV 5.0.0+, ONNX Runtime, spdlog, and Exiv2 (optional, for metadata preservation). FFmpeg is not a build dependency, but video processing needs `ffmpeg` and `ffprobe` at runtime (bundled next to the app, or on `PATH`). The detection models (SCRFD for faces, YOLOv9 for license plates) are not build dependencies — the app downloads them on first use, or you can pre-place them (see below).
+Requires CMake 3.24+, a C++20 compiler, Qt 6.8.1+ available to CMake (with the Linguist tools for UI translations; Qt Svg is optional and gives a crisp settings icon, falling back to a glyph without it), OpenCV 4.10.0 or newer (including OpenCV 5.x), ONNX Runtime, spdlog, and Exiv2 (optional, for metadata preservation). Linux and Windows release builds use Qt 6.10.3 and OpenCV 4.13.0. macOS builds use the latest stable Homebrew packages available when the workflow runs, while rolling-release development systems may also use OpenCV 5.x. FFmpeg is not a build dependency, but video processing needs `ffmpeg` and `ffprobe` at runtime (bundled next to the app, or on `PATH`). The detection models (SCRFD for faces, YOLOv9 for license plates) are not build dependencies — the app downloads them on first use, or you can pre-place them (see below).
 
 The built-in models are **not bundled** and **not committed** to this repository. The app downloads them on first use (with an integrity check) and caches them under the platform data directory. To pre-place them for offline use, drop them in `models/`:
 
@@ -76,7 +76,7 @@ The application still builds when Qt Linguist Tools are unavailable, but only th
 ```powershell
 cmake -S . -B build-windows -G Ninja `
   -DCMAKE_BUILD_TYPE=Release `
-  -DCMAKE_PREFIX_PATH="C:\Qt\6.11.1\msvc2022_64;C:\opencv\build" `
+  -DCMAKE_PREFIX_PATH="C:\Qt\6.10.3\msvc2022_64;C:\opencv\build" `
   -DONNXRUNTIME_ROOT="C:\onnxruntime-directml-1.24.4"
 cmake --build build-windows --config Release
 ```
@@ -87,14 +87,14 @@ Any ONNX Runtime build works for development, but official Windows releases use 
 
 ### Linux
 
-The Linux CI and AppImage release baseline is Ubuntu 26.04 with Qt 6.11.1, OpenCV 5.0.0, and ONNX Runtime 1.27.1. Install the system build dependencies with:
+The Linux CI and AppImage release baseline is Ubuntu 26.04 with Qt 6.10.3, OpenCV 4.13.0, and ONNX Runtime 1.27.1. Install the system build dependencies with:
 
 ```bash
 sudo apt install cmake ninja-build build-essential pkg-config \
   libjpeg-dev libpng-dev libtiff-dev libwebp-dev libspdlog-dev libexiv2-dev
 ```
 
-Install Qt 6.11.1 and OpenCV 5.0.0 separately when the distribution packages are older. The pinned source-build configuration used for releases is in [`.github/workflows/release.yml`](.github/workflows/release.yml).
+Install Qt 6.10.3 and OpenCV 4.13.0 separately when the distribution packages are older. The pinned source-build configuration used for releases is in [`.github/workflows/release.yml`](.github/workflows/release.yml).
 
 ONNX Runtime is detected via `pkg-config libonnxruntime` when available; otherwise point CMake at an ONNX Runtime release:
 
@@ -111,6 +111,8 @@ On Arch Linux, install the CPU development environment with:
 yay -S --needed base-devel cmake ninja pkgconf qt6-base qt6-tools qt6-svg \
   opencv onnxruntime-cpu spdlog exiv2 ffmpeg
 ```
+
+Arch Linux currently provides OpenCV 5 through the official `opencv` package. It is supported directly; a separate `opencv4` AUR package is not required for development.
 
 For NVIDIA GPU inference on AVX2-capable systems, replace `onnxruntime-cpu` with `onnxruntime-opt-cuda`:
 
