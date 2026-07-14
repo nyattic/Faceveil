@@ -92,6 +92,10 @@ if(WIN32)
     target_sources(Redactly PRIVATE ${PROJECT_SOURCE_DIR}/assets/Redactly.rc)
 endif()
 
+set_target_properties(Redactly PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
 target_compile_definitions(Redactly PRIVATE REDACTLY_VERSION="${PROJECT_VERSION}")
 target_link_libraries(Redactly PRIVATE
     redactly_core
