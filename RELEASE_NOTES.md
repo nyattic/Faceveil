@@ -1,5 +1,5 @@
-<!-- Keep release notes in English only so the repository and GitHub release
-     description have one authoritative version to maintain. -->
+<!-- Release notes through v1.9.0 are archived here. New releases use one file
+     per version in release-notes/. -->
 
 # Redactly 1.9.0
 
