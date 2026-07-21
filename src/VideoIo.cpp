@@ -20,6 +20,7 @@
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QThread>
 
 #include <spdlog/spdlog.h>
 
@@ -912,8 +913,7 @@ namespace redactly
         {
             error_ = trVideo("Could not start FFmpeg for encoding.");
             process_.reset();
-            stagingDirectory_.reset();
-            tempPath_.clear();
+            releaseStaging();
             return false;
         }
         return true;
@@ -1035,8 +1035,7 @@ namespace redactly
 
         if (publishGuard && !publishGuard())
         {
-            stagingDirectory_.reset();
-            tempPath_.clear();
+            releaseStaging();
             error_ = trVideo("The source video changed during processing.");
             return false;
         }
@@ -1083,8 +1082,7 @@ namespace redactly
         }
         if (!published)
         {
-            stagingDirectory_.reset();
-            tempPath_.clear();
+            releaseStaging();
             if (!guardAccepted)
             {
                 error_ = trVideo("The source video changed during processing.");
@@ -1097,9 +1095,24 @@ namespace redactly
             }
             return false;
         }
-        stagingDirectory_.reset();
-        tempPath_.clear();
+        releaseStaging();
         return true;
+    }
+
+    void VideoFrameWriter::releaseStaging()
+    {
+        if (stagingDirectory_)
+        {
+            for (int attempt = 0;
+                 stagingDirectory_->isValid() && !stagingDirectory_->remove() &&
+                 attempt < 20;
+                 ++attempt)
+            {
+                QThread::msleep(100);
+            }
+            stagingDirectory_.reset();
+        }
+        tempPath_.clear();
     }
 
     void VideoFrameWriter::abort()
@@ -1113,11 +1126,7 @@ namespace redactly
             }
             process_.reset();
         }
-        if (!tempPath_.isEmpty())
-        {
-            tempPath_.clear();
-        }
-        stagingDirectory_.reset();
+        releaseStaging();
         outputRootPath_.clear();
         relativeDestinationPath_.clear();
     }

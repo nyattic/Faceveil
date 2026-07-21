@@ -134,6 +134,8 @@ namespace redactly
         [[nodiscard]] QString encoderName() const;
 
     private:
+        void releaseStaging();
+
         std::unique_ptr<QProcess> process_;
         std::unique_ptr<QTemporaryDir> stagingDirectory_;
         QString tempPath_;

@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
+#include <QThread>
 
 #include <spdlog/spdlog.h>
 
@@ -276,6 +277,30 @@ namespace redactly
             bool stopping_ = false;
         };
 
+        class RetryingStagingDir
+        {
+        public:
+            explicit RetryingStagingDir(const QString &templatePath): dir_(templatePath) {}
+
+            ~RetryingStagingDir()
+            {
+                for (int attempt = 0;
+                     dir_.isValid() && !dir_.remove() && attempt < 20; ++attempt)
+                {
+                    QThread::msleep(100);
+                }
+            }
+
+            RetryingStagingDir(const RetryingStagingDir &) = delete;
+            RetryingStagingDir &operator=(const RetryingStagingDir &) = delete;
+
+            [[nodiscard]] bool isValid() const { return dir_.isValid(); }
+            [[nodiscard]] QString path() const { return dir_.path(); }
+
+        private:
+            QTemporaryDir dir_;
+        };
+
         QString trVideoProcessor(const char *text)
         {
             return QCoreApplication::translate("redactly::VideoProcessor", text);
@@ -372,7 +397,7 @@ namespace redactly
         const QString stagingBase = !options.outputRootPath.isEmpty()
                                         ? options.outputRootPath
                                         : QFileInfo(destinationPath).absolutePath();
-        QTemporaryDir sourceStaging(
+        RetryingStagingDir sourceStaging(
             QDir(stagingBase).filePath(QStringLiteral(".redactly-snapshot-XXXXXX")));
         if (!sourceStaging.isValid())
         {
