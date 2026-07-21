@@ -1,9 +1,13 @@
 # Redactly
 
-![Release](https://img.shields.io/github/v/release/nyattic/Redactly?style=flat&color=6366f1)
-![Downloads](https://img.shields.io/github/downloads/nyattic/Redactly/total?style=flat&color=10b981)
-![Last Commit](https://img.shields.io/github/last-commit/nyattic/Redactly?style=flat&color=f59e0b)
-![License](https://img.shields.io/badge/license-GPL--3.0--or--later-8b5cf6?style=flat)
+![Release](https://img.shields.io/github/v/release/nyattic/Redactly?style=for-the-badge&logo=github&logoColor=white&labelColor=1e1b2e&color=6366f1)
+![Downloads](https://img.shields.io/github/downloads/nyattic/Redactly/total?style=for-the-badge&logo=github&logoColor=white&labelColor=1e1b2e&color=6366f1)
+![Last Commit](https://img.shields.io/github/last-commit/nyattic/Redactly?style=for-the-badge&logo=git&logoColor=white&labelColor=1e1b2e&color=6366f1)
+![License](https://img.shields.io/badge/license-GPL--3.0--or--later-6366f1?style=for-the-badge&logo=gnu&logoColor=white&labelColor=1e1b2e)
+
+![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-000000?style=for-the-badge&logo=apple&logoColor=white&labelColor=1e1b2e)
+![Windows](https://img.shields.io/badge/Windows-x64-0078D6?style=for-the-badge&logo=windows&logoColor=white&labelColor=1e1b2e)
+![Linux](https://img.shields.io/badge/Linux-x86__64-FCC624?style=for-the-badge&logo=linux&logoColor=white&labelColor=1e1b2e)
 
 Local desktop app that automatically redacts faces and license plates in your photos and videos. Drop in images, videos, or folders, choose what to detect, get anonymized copies — your files are processed entirely on your machine and never uploaded.
 
