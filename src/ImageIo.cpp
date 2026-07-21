@@ -1123,12 +1123,31 @@ namespace redactly
                 return false;
             }
 #endif
-            if (::linkat(stageDescriptor, payload, parentDescriptor, destination, 0) != 0)
+            if (::linkat(stageDescriptor, payload, parentDescriptor, destination, 0) == 0)
+            {
+                ::unlinkat(stageDescriptor, payload, 0);
+                return true;
+            }
+            if (errno == EEXIST)
             {
                 return false;
             }
-            ::unlinkat(stageDescriptor, payload, 0);
-            return true;
+            if (errno != ENOTSUP && errno != EOPNOTSUPP && errno != EPERM &&
+                errno != ENOSYS)
+            {
+                return false;
+            }
+            struct stat existing{};
+            if (::fstatat(parentDescriptor, destination, &existing,
+                          AT_SYMLINK_NOFOLLOW) == 0)
+            {
+                return false;
+            }
+            if (errno != ENOENT)
+            {
+                return false;
+            }
+            return ::renameat(stageDescriptor, payload, parentDescriptor, destination) == 0;
         }
 
         template<typename Writer>

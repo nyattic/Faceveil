@@ -20,7 +20,7 @@ namespace redactly
     namespace
     {
         constexpr int kChannels = 3;
-        constexpr std::size_t kMaxPlateCandidates = 2048;
+        constexpr std::size_t kMaxPlateCandidates = 16'384;
         constexpr std::size_t kMaxPlateOutputRows = 65'536;
         constexpr std::uintmax_t kMaxModelFileBytes = 512ULL * 1024ULL * 1024ULL;
 

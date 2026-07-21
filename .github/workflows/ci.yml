@@ -30,12 +30,12 @@ env:
 jobs:
   macos:
     name: Build & test macOS
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       CMAKE_PREFIX_PATH: /opt/homebrew
       PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig
       HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
-      MACOSX_DEPLOYMENT_TARGET: '15.0'
+      MACOSX_DEPLOYMENT_TARGET: '26.0'
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
@@ -43,7 +43,7 @@ jobs:
         run: brew install cmake qt opencv onnxruntime spdlog exiv2 ffmpeg
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=26.0
 
       - name: Build
         run: cmake --build build --parallel
@@ -133,9 +133,16 @@ jobs:
           cache: true
 
       - name: Set up MSVC environment
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
-        with:
-          arch: amd64
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vsPath) { throw "No Visual Studio installation with MSVC tools was found" }
+          cmd /s /c "`"$vsPath\VC\Auxiliary\Build\vcvars64.bat`" && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            }
+          }
 
       - name: Install OpenCV
         shell: pwsh
@@ -187,5 +194,6 @@ jobs:
       - name: Test
         shell: pwsh
         run: |
-          $env:PATH = "$env:ONNXRUNTIME_ROOT\lib;$(Resolve-Path (Join-Path $env:OpenCV_DIR '..\bin'));$env:PATH"
+          Copy-Item "$env:ONNXRUNTIME_ROOT\lib\*.dll" build\tests\
+          $env:PATH = "$(Resolve-Path (Join-Path $env:OpenCV_DIR '..\bin'));$env:PATH"
           ctest --test-dir build --output-on-failure

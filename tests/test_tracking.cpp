@@ -520,7 +520,7 @@ namespace
     void testTrackingSafetyLimitsRejectExcessiveData()
     {
         std::vector<redactly::FaceDetections> crowded(1);
-        for (int index = 0; index < 257; ++index)
+        for (int index = 0; index < 1025; ++index)
         {
             crowded[0].push_back(det(static_cast<float>(index), 100.0F));
         }
@@ -535,7 +535,7 @@ namespace
         }
         assert(crowdedRejected);
 
-        constexpr int frameCount = 4100;
+        constexpr int frameCount = 65'540;
         std::vector<redactly::FaceDetections> singletons(frameCount);
         std::vector<int> cuts;
         cuts.reserve(frameCount);

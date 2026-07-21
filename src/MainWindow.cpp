@@ -1351,30 +1351,24 @@ namespace redactly
             if (detector && completedRun.has_value() && completedRun->detectFaces &&
                 completedRun->faceKey.isValid() && cacheRunResult)
             {
-                auto key = completedRun->faceKey;
-                key.gpuAcceleration = detector->accelerator() != OrtAccelerator::None;
                 cachedDetector_ = std::move(detector);
-                cachedDetectorKey_ = std::move(key);
+                cachedDetectorKey_ = completedRun->faceKey;
             }
 
             auto videoDetector = worker_->takeVideoDetector();
             if (videoDetector && completedRun.has_value() && completedRun->detectFaces &&
                 completedRun->faceKey.isValid() && cacheRunResult)
             {
-                auto key = completedRun->faceKey;
-                key.gpuAcceleration = videoDetector->accelerator() != OrtAccelerator::None;
                 cachedVideoDetector_ = std::move(videoDetector);
-                cachedVideoDetectorKey_ = std::move(key);
+                cachedVideoDetectorKey_ = completedRun->faceKey;
             }
 
             auto plate = worker_->takePlateDetector();
             if (plate && completedRun.has_value() && completedRun->detectPlates &&
                 completedRun->plateKey.isValid() && cacheRunResult)
             {
-                auto key = completedRun->plateKey;
-                key.gpuAcceleration = plate->accelerator() != OrtAccelerator::None;
                 cachedPlateDetector_ = std::move(plate);
-                cachedPlateDetectorKey_ = std::move(key);
+                cachedPlateDetectorKey_ = completedRun->plateKey;
             }
         }
 

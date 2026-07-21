@@ -20,7 +20,7 @@ namespace redactly
     inline constexpr qint64 kMaxVideoPixelCount = 36'000'000;
     inline constexpr double kMaxVideoFrameRate = 240.0;
     inline constexpr double kMaxVideoDurationSeconds = 24.0 * 60.0 * 60.0;
-    inline constexpr qint64 kMaxVideoFrameCount = 2'000'000;
+    inline constexpr qint64 kMaxVideoFrameCount = 3'000'000;
 
     struct FfmpegTools
     {

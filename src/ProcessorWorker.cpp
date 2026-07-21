@@ -39,11 +39,11 @@ namespace redactly
 {
     namespace
     {
-        constexpr std::uintmax_t kMaxInputFileBytes = 128ULL * 1024ULL * 1024ULL;
-        constexpr long long kMaxPixelCount = 24LL * 1000LL * 1000LL;
-        constexpr long long kMaxJpegPixelCount = 64LL * 1000LL * 1000LL;
+        constexpr std::uintmax_t kMaxInputFileBytes = 2ULL * 1024ULL * 1024ULL * 1024ULL;
+        constexpr long long kMaxPixelCount = 512LL * 1000LL * 1000LL;
+        constexpr long long kMaxJpegPixelCount = 512LL * 1000LL * 1000LL;
         constexpr std::uint64_t kImageMinimumMemoryBudget = 512ULL * 1024ULL * 1024ULL;
-        constexpr std::uint64_t kImageMaximumMemoryBudget = 4ULL * 1024ULL * 1024ULL * 1024ULL;
+        constexpr std::uint64_t kImageMaximumMemoryBudget = 16ULL * 1024ULL * 1024ULL * 1024ULL;
         constexpr std::uint64_t kEstimatedImageBytesPerPixel = 16;
         constexpr int kVideoDetectionInputSize = 960;
 
@@ -52,7 +52,7 @@ namespace redactly
         std::uint64_t imageMemoryBudget()
         {
             return adaptiveMemoryBudget(kImageMinimumMemoryBudget,
-                                        kImageMaximumMemoryBudget, 8);
+                                        kImageMaximumMemoryBudget, 4);
         }
 
         struct ImageDimensionCheck
@@ -167,7 +167,7 @@ namespace redactly
                 const auto dimensions = inspectImageDimensions(items[index].sourcePath);
                 if (!dimensions.size.isValid())
                 {
-                    return 1;
+                    continue;
                 }
                 const auto pixels = static_cast<std::uint64_t>(dimensions.size.width()) *
                                     static_cast<std::uint64_t>(dimensions.size.height());

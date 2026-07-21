@@ -26,7 +26,9 @@
         <source>Could not download the model.
 
 %1</source>
-        <translation>无法下载模型。\n\n%1</translation>
+        <translation>无法下载模型。
+
+%1</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="374"/>
@@ -56,7 +58,11 @@
 Redactly can download it once (%2 MB) from Hugging Face. The model is provided by InsightFace for non-commercial use. Your images are never uploaded.
 
 Download now?</source>
-        <translation>%1 模型尚未安装在此电脑上。\n\nRedactly 可以从 Hugging Face 下载一次（%2 MB）。该模型由 InsightFace 提供，仅限非商业用途。您的图像绝不会被上传。\n\n立即下载？</translation>
+        <translation>%1 模型尚未安装在此电脑上。
+
+Redactly 可以从 Hugging Face 下载一次（%2 MB）。该模型由 InsightFace 提供，仅限非商业用途。您的图像绝不会被上传。
+
+立即下载？</translation>
     </message>
     <message>
         <source>The license plate detection model isn&apos;t on this computer yet.
@@ -64,7 +70,11 @@ Download now?</source>
 Redactly can download it once (%1 MB) from the open-image-models project (MIT-licensed). Your images are never uploaded.
 
 Download now?</source>
-        <translation>车牌检测模型尚未安装在此电脑上。\n\nRedactly 可以从 open-image-models 项目下载一次（%1 MB，MIT 许可证）。您的图像绝不会被上传。\n\n立即下载？</translation>
+        <translation>车牌检测模型尚未安装在此电脑上。
+
+Redactly 可以从 open-image-models 项目下载一次（%1 MB，MIT 许可证）。您的图像绝不会被上传。
+
+立即下载？</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="449"/>
@@ -105,7 +115,12 @@ Model: %1
 Size: %2 MB
 
 Continue?</source>
-        <translation>请仅加载来源可信的 ONNX 模型。\n\n模型：%1\n大小：%2 MB\n\n继续？</translation>
+        <translation>请仅加载来源可信的 ONNX 模型。
+
+模型：%1
+大小：%2 MB
+
+继续？</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="554"/>
@@ -222,7 +237,9 @@ Continue?</source>
         <source>Review detections before output:
   • Images: exclude boxes or add missed regions
   • Videos: scrub the track timeline and exclude false tracks</source>
-        <translation>输出前检查检测结果：\n  • 图像：排除检测框或添加遗漏区域\n  • 视频：浏览轨迹时间线并排除错误轨迹</translation>
+        <translation>输出前检查检测结果：
+  • 图像：排除检测框或添加遗漏区域
+  • 视频：浏览轨迹时间线并排除错误轨迹</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="666"/>
@@ -248,7 +265,8 @@ Continue?</source>
         <location filename="../src/MainWindow.cpp" line="690"/>
         <source>Off (default): output carries no metadata — GPS, camera, and timestamps are removed.
 On: copies selected EXIF fields such as camera, timestamps, and location. Embedded previews, IPTC, XMP, comments, and color profiles are removed. Format and bit depth are preserved at maximum quality.</source>
-        <translation>关（默认）：输出不含任何元数据，GPS、相机和时间戳将被移除。\n开：仅复制相机、时间戳和位置等选定的 EXIF 字段。嵌入式预览、IPTC、XMP、注释和色彩配置文件将被移除，并以最高质量保留格式和位深度。</translation>
+        <translation>关（默认）：输出不含任何元数据，GPS、相机和时间戳将被移除。
+开：仅复制相机、时间戳和位置等选定的 EXIF 字段。嵌入式预览、IPTC、XMP、注释和色彩配置文件将被移除，并以最高质量保留格式和位深度。</translation>
     </message>
     <message>
         <source>Metadata preservation is unavailable in this build. Output metadata will be removed.</source>
@@ -336,35 +354,47 @@ Mosaic = pixelation (block size below).
 Gaussian blur = strong smoothing scaled to face size.
 Solid fill = opaque black box, irreversible.
 Sticker = a friendly opaque smiley. Default: Mosaic</source>
-        <translation>检测到的人脸遮盖方式。\n马赛克 = 像素化（块大小见下方）。\n高斯模糊 = 根据人脸大小进行强模糊。\n纯色填充 = 不透明黑框，无法还原。\n贴纸 = 友好的不透明笑脸。默认：马赛克</translation>
+        <translation>检测到的人脸遮盖方式。
+马赛克 = 像素化（块大小见下方）。
+高斯模糊 = 根据人脸大小进行强模糊。
+纯色填充 = 不透明黑框，无法还原。
+贴纸 = 友好的不透明笑脸。默认：马赛克</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="752"/>
         <source>Minimum confidence to accept a face.
 Higher = fewer false positives but may miss small or side-profile faces.
 Lower = catches more faces but may blur non-face regions. Default: 0.50</source>
-        <translation>接受人脸所需的最低置信度。\n越高 = 误报更少，但可能漏掉小脸或侧脸。\n越低 = 检出更多人脸，但可能模糊非人脸区域。默认：0.50</translation>
+        <translation>接受人脸所需的最低置信度。
+越高 = 误报更少，但可能漏掉小脸或侧脸。
+越低 = 检出更多人脸，但可能模糊非人脸区域。默认：0.50</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="765"/>
         <source>Non-Maximum Suppression overlap threshold for duplicate boxes.
 Lower = more aggressively removes overlapping detections.
 Higher = allows more overlap. Default: 0.40</source>
-        <translation>用于去除重复框的非极大值抑制重叠阈值。\n越低 = 更积极地去除重叠检测。\n越高 = 允许更多重叠。默认：0.40</translation>
+        <translation>用于去除重复框的非极大值抑制重叠阈值。
+越低 = 更积极地去除重叠检测。
+越高 = 允许更多重叠。默认：0.40</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="776"/>
         <source>Mosaic block size in pixels.
 Larger = coarser blocks, harder to un-blur.
 Smaller = finer mosaic, higher recovery risk. Default: 14</source>
-        <translation>马赛克块大小（像素）。\n越大 = 块越粗，更难恢复。\n越小 = 马赛克越细，恢复风险越高。默认：14</translation>
+        <translation>马赛克块大小（像素）。
+越大 = 块越粗，更难恢复。
+越小 = 马赛克越细，恢复风险越高。默认：14</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="789"/>
         <source>Extra margin around each detected face, as a fraction of its size.
 Covers ears, hairline, and chin that the detector may miss.
 0.00 = exact box, 0.18 = ~18% larger. Default: 0.18</source>
-        <translation>每张已检测人脸周围的额外边距，以人脸大小的比例表示。\n用于覆盖检测器可能漏掉的耳朵、发际线和下巴。\n0.00 = 原始框，0.18 = 约扩大 18%。默认：0.18</translation>
+        <translation>每张已检测人脸周围的额外边距，以人脸大小的比例表示。
+用于覆盖检测器可能漏掉的耳朵、发际线和下巴。
+0.00 = 原始框，0.18 = 约扩大 18%。默认：0.18</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="801"/>
@@ -383,7 +413,8 @@ Covers ears, hairline, and chin that the detector may miss.
     <message>
         <source>Fades the edge of the obscured region into the photo instead of a hard cutoff.
 The fade only extends outward, so the detected area stays fully covered. Default: off</source>
-        <translation>让遮盖区域边缘淡入照片，而不是生硬截断。\n渐变仅向外延伸，因此检测区域仍会被完全覆盖。默认：关</translation>
+        <translation>让遮盖区域边缘淡入照片，而不是生硬截断。
+渐变仅向外延伸，因此检测区域仍会被完全覆盖。默认：关</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="747"/>
@@ -400,7 +431,9 @@ The fade only extends outward, so the detected area stays fully covered. Default
         <source>Shape of the obscured region.
 Rectangle = full padded box.
 Rounded = elliptical mask that follows the face and leaves corners untouched. Default: Rectangle</source>
-        <translation>遮盖区域的形状。\n矩形 = 完整的扩展框。\n圆角 = 贴合人脸的椭圆遮罩，四角不遮盖。默认：矩形</translation>
+        <translation>遮盖区域的形状。
+矩形 = 完整的扩展框。
+圆角 = 贴合人脸的椭圆遮罩，四角不遮盖。默认：矩形</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="804"/>
@@ -582,7 +615,16 @@ Skipped: %5
 Failed: %6
 
 Check these results before sharing them.</source>
-        <translation>处理已完成，但部分结果需要注意。\n\n总计：%1\n已遮盖：%2\n未遮盖保存：%3\n已复制：%4\n已跳过：%5\n失败：%6\n\n请在分享前检查这些结果。</translation>
+        <translation>处理已完成，但部分结果需要注意。
+
+总计：%1
+已遮盖：%2
+未遮盖保存：%3
+已复制：%4
+已跳过：%5
+失败：%6
+
+请在分享前检查这些结果。</translation>
     </message>
     <message>
         <source>Failed — check the log for details.</source>
@@ -955,7 +997,9 @@ Check these results before sharing them.</source>
         <source>Stop reviewing and cancel the remaining %n image(s)?
 
 Images already saved are kept.</source>
-        <translation><numerusform>停止检查并取消剩余的 %n 张图像？\n\n已保存的图像会保留。</numerusform></translation>
+        <translation><numerusform>停止检查并取消剩余的 %n 张图像？
+
+已保存的图像会保留。</numerusform></translation>
     </message>
     <message>
         <location filename="../src/ReviewDialog.cpp" line="402"/>
@@ -991,7 +1035,11 @@ Images already saved are kept.</source>
 %1
 
 Continue?</source>
-        <translation>此图像不会被匿名化。\n\n%1\n\n继续？</translation>
+        <translation>此图像不会被匿名化。
+
+%1
+
+继续？</translation>
     </message>
     <message>
         <source>The unredacted original will be saved to the output folder, including its original metadata (EXIF, GPS, timestamps).</source>

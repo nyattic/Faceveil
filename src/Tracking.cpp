@@ -11,9 +11,9 @@ namespace redactly
 {
     namespace
     {
-        constexpr std::size_t kMaxDetectionsPerFrame = 256;
+        constexpr std::size_t kMaxDetectionsPerFrame = 1024;
         constexpr std::size_t kMaxActiveTracks = 4096;
-        constexpr std::size_t kMaxTrackCount = 4096;
+        constexpr std::size_t kMaxTrackCount = 65'536;
         constexpr std::size_t kMaxTrackedBoxesPerPass = 8'000'000;
         constexpr std::size_t kMaxBidirectionalTrackedBoxes = 16'000'000;
         constexpr std::size_t kMaxFinalTrackedBoxes = 8'000'000;
