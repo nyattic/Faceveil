@@ -28,6 +28,7 @@ add_library(cloakframe_core STATIC
     Tracking.cpp
     VideoIo.cpp
     VideoProcessor.cpp
+    VideoReviewTypes.cpp
     ${PROJECT_SOURCE_DIR}/include/cloakframe/DetectionGeometry.hpp
     ${PROJECT_SOURCE_DIR}/include/cloakframe/Detector.hpp
     ${PROJECT_SOURCE_DIR}/include/cloakframe/FaceDetection.hpp

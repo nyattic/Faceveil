@@ -238,10 +238,10 @@ Continue?</translation>
             <location filename="../src/MainWindow.cpp" line="637" />
             <source>Review detections before output:
   • Images: exclude boxes or add missed regions
-  • Videos: scrub the track timeline and exclude false tracks</source>
-            <translation>Review detections before output:
-  • Images: exclude boxes or add missed regions
-  • Videos: scrub the track timeline and exclude false tracks</translation>
+  • Videos: scrub the timeline, exclude false tracks, or add missed tracks with keyframes</source>
+            <translation>出力前に検出結果を確認します：
+  • 画像：ボックスを除外するか、見逃した領域を追加
+  • 動画：タイムラインを移動し、誤検出トラックを除外するか、キーフレームで見逃したトラックを追加</translation>
         </message>
         <message>
             <location filename="../src/MainWindow.cpp" line="666" />
@@ -675,8 +675,8 @@ Check these results before sharing them.</translation>
         <translation>検出された顔を覆う画像を選択</translation>
     </message>
     <message>
-        <source>The image keeps its aspect ratio and follows detected face tilt when available. Transparent pixels leave the original image visible.</source>
-        <translation>画像は縦横比を維持し、可能な場合は検出された顔の傾きに追従します。透明なピクセルでは元の画像がそのまま表示されます。</translation>
+        <source>The image keeps its aspect ratio and follows detected face tilt when available. Transparent pixels reveal a safety mosaic instead of the original image.</source>
+        <translation>画像は縦横比を維持し、可能な場合は検出された顔の傾きに追従します。透明ピクセルには元の画像ではなく、安全用モザイクが表示されます。</translation>
     </message>
     <message>
         <source>Choose custom image</source>
@@ -1328,12 +1328,20 @@ Continue?</translation>
     <context>
         <name>cloakframe::VideoReviewCanvas</name>
         <message>
+            <source>Loading frame preview…</source>
+            <translation>フレームプレビューを読み込み中…</translation>
+        </message>
+        <message>
             <source>Could not load this frame preview.</source>
             <translation>このフレームのプレビューを読み込めませんでした。</translation>
         </message>
         <message>
             <source>Track %1</source>
             <translation>トラック %1</translation>
+        </message>
+        <message>
+            <source>Manual %1</source>
+            <translation>手動 %1</translation>
         </message>
     </context>
     <context>
@@ -1343,12 +1351,32 @@ Continue?</translation>
             <translation>動画トラックを確認 — %1</translation>
         </message>
         <message>
-            <source>Scrub the timeline and uncheck false detections. Changes apply to the entire track before the video is encoded.</source>
-            <translation>Scrub the timeline and uncheck false detections. Changes apply to the entire track before the video is encoded.</translation>
+            <source>Scrub the timeline and uncheck false detections. To cover a missed region, draw a manual track and add keyframes as it moves; the boxes between keyframes are interpolated before encoding.</source>
+            <translation>タイムラインを移動して誤検出のチェックを外してください。見逃した領域を覆うには、手動トラックを描画し、動きに合わせてキーフレームを追加します。キーフレーム間のボックスはエンコード前に補間されます。</translation>
         </message>
         <message>
             <source>Track %1  ·  %2–%3</source>
             <translation>トラック %1  ·  %2–%3</translation>
+        </message>
+        <message>
+            <source>Add missed track</source>
+            <translation>見逃したトラックを追加</translation>
+        </message>
+        <message>
+            <source>Add / update keyframe</source>
+            <translation>キーフレームを追加 / 更新</translation>
+        </message>
+        <message>
+            <source>Set start here</source>
+            <translation>ここを開始位置に設定</translation>
+        </message>
+        <message>
+            <source>Set end here</source>
+            <translation>ここを終了位置に設定</translation>
+        </message>
+        <message>
+            <source>Remove manual track</source>
+            <translation>手動トラックを削除</translation>
         </message>
         <message>
             <source>Include all</source>
@@ -1371,8 +1399,22 @@ Continue?</translation>
             <translation>%1 / %2</translation>
         </message>
         <message>
-            <source>%1 of %2 tracks included</source>
-            <translation>%2 トラック中 %1 件を含む</translation>
+            <source>Drag a box around the missed region on the current frame.</source>
+            <translation>現在のフレームで、見逃した領域を囲むボックスをドラッグしてください。</translation>
+        </message>
+        <message>
+            <source>Drag the new box for manual track %1 on this frame.</source>
+            <translation>このフレームで手動トラック %1 の新しいボックスをドラッグしてください。</translation>
+        </message>
+        <message numerus="yes">
+            <source>Manual %1  ·  %2–%3  ·  %n keyframe(s)</source>
+            <translation>
+                <numerusform>手動 %1  ·  %2–%3  ·  キーフレーム %n 件</numerusform>
+            </translation>
+        </message>
+        <message>
+            <source>%1 of %2 automatic tracks included · %3 manual</source>
+            <translation>自動トラック %2 件中 %1 件を含む · 手動 %3 件</translation>
         </message>
     </context>
     <context>

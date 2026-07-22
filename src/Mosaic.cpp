@@ -627,7 +627,12 @@ namespace cloakframe
 
             if (method == AnonymizationMethod::CustomImage)
             {
-                customImageRegion(image(roiRect), customImage,
+                cv::Mat roi = image(roiRect);
+                // Custom artwork may contain fully or partially transparent pixels. Always
+                // anonymize the detected region first so transparency can never reveal the
+                // original face or plate while the visible artwork keeps its alpha blending.
+                mosaicRegion(roi, blockSize);
+                customImageRegion(roi, customImage,
                                   detection.rollRadians, detection.hasPose);
                 continue;
             }

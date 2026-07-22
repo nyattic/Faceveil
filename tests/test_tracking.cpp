@@ -1,5 +1,6 @@
 #include "cloakframe/SceneCut.hpp"
 #include "cloakframe/Tracking.hpp"
+#include "cloakframe/VideoReviewTypes.hpp"
 
 #include <opencv2/core.hpp>
 
@@ -11,6 +12,40 @@
 
 namespace
 {
+    void testManualVideoTrackInterpolationAndBounds()
+    {
+        cloakframe::VideoReviewManualTrack manual;
+        manual.id = 90;
+        manual.startFrame = 2;
+        manual.endFrame = 8;
+        manual.keyframes = {
+            {3, QRectF(10.0, 20.0, 30.0, 40.0), false},
+            {7, QRectF(30.0, 40.0, 50.0, 60.0), false},
+        };
+
+        const auto beforeFirst = cloakframe::manualTrackRectAtFrame(manual, 2);
+        assert(beforeFirst && *beforeFirst == manual.keyframes.front().rect);
+        const auto middle = cloakframe::manualTrackRectAtFrame(manual, 5);
+        assert(middle && *middle == QRectF(20.0, 30.0, 40.0, 50.0));
+        const auto afterLast = cloakframe::manualTrackRectAtFrame(manual, 8);
+        assert(afterLast && *afterLast == manual.keyframes.back().rect);
+        assert(!cloakframe::manualTrackRectAtFrame(manual, 1));
+
+        const auto track = cloakframe::materializeManualVideoTrack(
+            manual, 10, QSize(100, 100), 12);
+        assert(track && track->id == 12 && track->boxes.size() == 7);
+        assert(track->firstFrame() == 2 && track->lastFrame() == 8);
+        assert(track->boxAtFrame(3) && !track->boxAtFrame(3)->interpolated);
+        assert(track->boxAtFrame(5) && track->boxAtFrame(5)->interpolated);
+
+        auto invalid = manual;
+        std::swap(invalid.keyframes[0], invalid.keyframes[1]);
+        assert(!cloakframe::materializeManualVideoTrack(
+            invalid, 10, QSize(100, 100), 13));
+        assert(!cloakframe::materializeManualVideoTrack(
+            manual, 8, QSize(100, 100), 13));
+    }
+
     cloakframe::FaceDetection det(float x, float y, float score = 0.9F, float size = 40.0F)
     {
         return {cv::Rect2f(x, y, size, size), score};
@@ -638,6 +673,7 @@ namespace
 
 int main()
 {
+    testManualVideoTrackInterpolationAndBounds();
     testConstantVelocitySingleTrack();
     testGapInterpolationFillsMissedFrames();
     testGapLargerThanLimitIsNotInterpolated();

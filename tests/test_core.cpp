@@ -607,27 +607,36 @@ namespace
         assert(image.at<cv::Vec3b>(0, 0) == cv::Vec3b(100, 100, 100));
     }
 
-    void testTransparentCustomImagePreservesOriginal()
+    void testTransparentCustomImageFallsBackToSafeMosaic()
     {
-        cv::Mat image(32, 32, CV_8UC3, cv::Scalar(100, 120, 140));
+        cv::Mat image(32, 32, CV_8UC3);
+        for (int y = 0; y < image.rows; ++y)
+        {
+            for (int x = 0; x < image.cols; ++x)
+            {
+                image.at<cv::Vec3b>(y, x) = cv::Vec3b(
+                    static_cast<unsigned char>(x * 7),
+                    static_cast<unsigned char>(y * 7),
+                    static_cast<unsigned char>((x + y) * 3));
+            }
+        }
+        const cv::Mat original = image.clone();
+        cv::Mat expected = original.clone();
         const cv::Mat transparent(2, 2, CV_8UC4, cv::Scalar(250, 240, 230, 0));
         cloakframe::FaceDetections detections = {
             {cv::Rect2f(8.0F, 8.0F, 16.0F, 16.0F), 1.0F},
         };
 
+        cloakframe::applyAnonymization(expected, detections,
+                                     cloakframe::AnonymizationMethod::Mosaic,
+                                     4, 0.0F, cloakframe::MaskShape::Rectangle, false);
         cloakframe::applyAnonymization(image, detections,
                                      cloakframe::AnonymizationMethod::CustomImage,
                                      4, 0.0F, cloakframe::MaskShape::Rectangle, false,
                                      transparent);
 
-        for (int y = 8; y < 24; ++y)
-        {
-            for (int x = 8; x < 24; ++x)
-            {
-                assert(image.at<cv::Vec3b>(y, x) == cv::Vec3b(100, 120, 140));
-            }
-        }
-        assert(image.at<cv::Vec3b>(0, 0) == cv::Vec3b(100, 120, 140));
+        assert(cv::norm(image, expected, cv::NORM_INF) == 0.0);
+        assert(image.at<cv::Vec3b>(0, 0) == original.at<cv::Vec3b>(0, 0));
     }
 
     void testSemitransparentCustomImageBlendsWithOriginal()
@@ -1293,7 +1302,7 @@ int main(int argc, char **argv)
     testSoftEdgesUsePaddingForAGradualTransition();
     testLargeSoftEdgeMaskUsesBoundedWorkingMemoryPath();
     testCustomImageCoversDetectedRegion();
-    testTransparentCustomImagePreservesOriginal();
+    testTransparentCustomImageFallsBackToSafeMosaic();
     testSemitransparentCustomImageBlendsWithOriginal();
     testCustomImageSupports16BitOutput();
     testCustomImagePreservesAspectRatio();

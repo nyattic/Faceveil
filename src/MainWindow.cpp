@@ -535,7 +535,8 @@ namespace cloakframe
                                  reviewCheck_->setToolTip(tr(
                                      "Review detections before output:\n"
                                      "  • Images: exclude boxes or add missed regions\n"
-                                     "  • Videos: scrub the track timeline and exclude false tracks"));
+                                     "  • Videos: scrub the timeline, exclude false tracks, or add "
+                                     "missed tracks with keyframes"));
                              });
 
             connect(addFilesButton_, &QPushButton::clicked, this, &MainWindow::chooseFiles);
@@ -683,7 +684,8 @@ namespace cloakframe
                                      tr("Choose an image to cover detected faces"));
                                  customImagePathEdit_->setToolTip(tr(
                                      "The image keeps its aspect ratio and follows detected face tilt "
-                                     "when available. Transparent pixels leave the original image visible."));
+                                     "when available. Transparent pixels reveal a safety mosaic instead "
+                                     "of the original image."));
                                  customImageBrowseButton_->setText(tr("Browse…"));
                                  customImageBrowseButton_->setAccessibleName(
                                      tr("Choose custom image"));

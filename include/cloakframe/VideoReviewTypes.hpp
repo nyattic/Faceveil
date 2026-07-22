@@ -6,6 +6,10 @@
 #include <QString>
 #include <QVector>
 
+#include <optional>
+
+#include "cloakframe/Tracking.hpp"
+
 namespace cloakframe
 {
     struct VideoReviewBox
@@ -19,6 +23,14 @@ namespace cloakframe
     {
         int id = 0;
         QVector<VideoReviewBox> boxes;
+    };
+
+    struct VideoReviewManualTrack
+    {
+        int id = 0;
+        int startFrame = 0;
+        int endFrame = 0;
+        QVector<VideoReviewBox> keyframes;
     };
 
     struct VideoReviewRequest
@@ -42,10 +54,19 @@ namespace cloakframe
     {
         VideoReviewDecision decision = VideoReviewDecision::Encode;
         QVector<int> excludedTrackIds;
+        QVector<VideoReviewManualTrack> addedTracks;
     };
+
+    [[nodiscard]] std::optional<QRectF> manualTrackRectAtFrame(
+        const VideoReviewManualTrack &track, int frame);
+
+    [[nodiscard]] std::optional<Track> materializeManualVideoTrack(
+        const VideoReviewManualTrack &track, int frameCount,
+        const QSize &frameSize, int assignedId);
 }
 
 Q_DECLARE_METATYPE(cloakframe::VideoReviewBox)
 Q_DECLARE_METATYPE(cloakframe::VideoReviewTrack)
+Q_DECLARE_METATYPE(cloakframe::VideoReviewManualTrack)
 Q_DECLARE_METATYPE(cloakframe::VideoReviewRequest)
 Q_DECLARE_METATYPE(cloakframe::VideoReviewResult)

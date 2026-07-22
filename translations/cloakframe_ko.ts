@@ -236,10 +236,10 @@ Continue?</source>
         <location filename="../src/MainWindow.cpp" line="637"/>
         <source>Review detections before output:
   • Images: exclude boxes or add missed regions
-  • Videos: scrub the track timeline and exclude false tracks</source>
+  • Videos: scrub the timeline, exclude false tracks, or add missed tracks with keyframes</source>
         <translation>출력 전에 감지 결과를 검토합니다:
   • 이미지: 상자를 제외하거나 놓친 영역 추가
-  • 동영상: 트랙 타임라인을 탐색하고 오탐 트랙 제외</translation>
+  • 동영상: 타임라인을 탐색하고 오탐 트랙을 제외하거나 키프레임으로 놓친 트랙 추가</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="666"/>
@@ -673,8 +673,8 @@ Check these results before sharing them.</source>
         <translation>감지된 얼굴을 가릴 이미지 선택</translation>
     </message>
     <message>
-        <source>The image keeps its aspect ratio and follows detected face tilt when available. Transparent pixels leave the original image visible.</source>
-        <translation>이미지는 원본 비율을 유지하며, 가능한 경우 감지된 얼굴 기울기를 따라갑니다. 투명한 픽셀에서는 원본 이미지가 그대로 보입니다.</translation>
+        <source>The image keeps its aspect ratio and follows detected face tilt when available. Transparent pixels reveal a safety mosaic instead of the original image.</source>
+        <translation>이미지는 원본 비율을 유지하며, 가능한 경우 감지된 얼굴 기울기를 따라갑니다. 투명한 픽셀 부분에는 원본 이미지 대신 모자이크 처리된 영역이 표시됩니다.</translation>
     </message>
     <message>
         <source>Choose custom image</source>
@@ -1318,12 +1318,20 @@ Continue?</source>
 <context>
     <name>cloakframe::VideoReviewCanvas</name>
     <message>
+        <source>Loading frame preview…</source>
+        <translation>프레임 미리보기 불러오는 중…</translation>
+    </message>
+    <message>
         <source>Could not load this frame preview.</source>
         <translation>이 프레임의 미리보기를 불러오지 못했습니다.</translation>
     </message>
     <message>
         <source>Track %1</source>
         <translation>트랙 %1</translation>
+    </message>
+    <message>
+        <source>Manual %1</source>
+        <translation>수동 %1</translation>
     </message>
 </context>
 <context>
@@ -1333,12 +1341,32 @@ Continue?</source>
         <translation>동영상 트랙 검토 — %1</translation>
     </message>
     <message>
-        <source>Scrub the timeline and uncheck false detections. Changes apply to the entire track before the video is encoded.</source>
-        <translation>타임라인을 탐색하고 오탐을 선택 해제하세요. 변경 사항은 동영상 인코딩 전에 트랙 전체에 적용됩니다.</translation>
+        <source>Scrub the timeline and uncheck false detections. To cover a missed region, draw a manual track and add keyframes as it moves; the boxes between keyframes are interpolated before encoding.</source>
+        <translation>타임라인을 탐색하고 오탐을 선택 해제하세요. 놓친 영역을 가리려면 수동 트랙을 그리고 움직임에 따라 키프레임을 추가하세요. 키프레임 사이의 상자는 인코딩 전에 보간됩니다.</translation>
     </message>
     <message>
         <source>Track %1  ·  %2–%3</source>
         <translation>트랙 %1  ·  %2–%3</translation>
+    </message>
+    <message>
+        <source>Add missed track</source>
+        <translation>놓친 트랙 추가</translation>
+    </message>
+    <message>
+        <source>Add / update keyframe</source>
+        <translation>키프레임 추가 / 업데이트</translation>
+    </message>
+    <message>
+        <source>Set start here</source>
+        <translation>시작 지점을 여기로 설정</translation>
+    </message>
+    <message>
+        <source>Set end here</source>
+        <translation>종료 지점을 여기로 설정</translation>
+    </message>
+    <message>
+        <source>Remove manual track</source>
+        <translation>수동 트랙 제거</translation>
     </message>
     <message>
         <source>Include all</source>
@@ -1361,8 +1389,20 @@ Continue?</source>
         <translation>%1 / %2</translation>
     </message>
     <message>
-        <source>%1 of %2 tracks included</source>
-        <translation>트랙 %2개 중 %1개 포함</translation>
+        <source>Drag a box around the missed region on the current frame.</source>
+        <translation>현재 프레임에서 놓친 영역을 둘러싸는 상자를 드래그하세요.</translation>
+    </message>
+    <message>
+        <source>Drag the new box for manual track %1 on this frame.</source>
+        <translation>이 프레임에서 수동 트랙 %1의 새 상자를 드래그하세요.</translation>
+    </message>
+    <message numerus="yes">
+        <source>Manual %1  ·  %2–%3  ·  %n keyframe(s)</source>
+        <translation><numerusform>수동 %1  ·  %2–%3  ·  키프레임 %n개</numerusform></translation>
+    </message>
+    <message>
+        <source>%1 of %2 automatic tracks included · %3 manual</source>
+        <translation>자동 트랙 %2개 중 %1개 포함 · 수동 %3개</translation>
     </message>
 </context>
 <context>

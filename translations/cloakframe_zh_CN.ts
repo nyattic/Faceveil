@@ -236,10 +236,10 @@ Continue?</source>
         <location filename="../src/MainWindow.cpp" line="637"/>
         <source>Review detections before output:
   • Images: exclude boxes or add missed regions
-  • Videos: scrub the track timeline and exclude false tracks</source>
+  • Videos: scrub the timeline, exclude false tracks, or add missed tracks with keyframes</source>
         <translation>输出前检查检测结果：
   • 图像：排除检测框或添加遗漏区域
-  • 视频：浏览轨迹时间线并排除错误轨迹</translation>
+  • 视频：浏览时间线，排除误检轨迹，或通过关键帧添加漏检轨迹</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="666"/>
@@ -673,8 +673,8 @@ Check these results before sharing them.</source>
         <translation>选择用于遮挡检测到的人脸的图像</translation>
     </message>
     <message>
-        <source>The image keeps its aspect ratio and follows detected face tilt when available. Transparent pixels leave the original image visible.</source>
-        <translation>图像会保持宽高比，并在可用时跟随检测到的人脸倾斜。透明像素会让原始图像保持可见。</translation>
+        <source>The image keeps its aspect ratio and follows detected face tilt when available. Transparent pixels reveal a safety mosaic instead of the original image.</source>
+        <translation>图像会保持宽高比，并在可用时跟随检测到的人脸倾斜。透明像素会显示安全马赛克，而不是原始图像。</translation>
     </message>
     <message>
         <source>Choose custom image</source>
@@ -1318,12 +1318,20 @@ Continue?</source>
 <context>
     <name>cloakframe::VideoReviewCanvas</name>
     <message>
+        <source>Loading frame preview…</source>
+        <translation>正在加载帧预览…</translation>
+    </message>
+    <message>
         <source>Could not load this frame preview.</source>
         <translation>无法加载此帧预览。</translation>
     </message>
     <message>
         <source>Track %1</source>
         <translation>轨迹 %1</translation>
+    </message>
+    <message>
+        <source>Manual %1</source>
+        <translation>手动 %1</translation>
     </message>
 </context>
 <context>
@@ -1333,12 +1341,32 @@ Continue?</source>
         <translation>检查视频轨迹 — %1</translation>
     </message>
     <message>
-        <source>Scrub the timeline and uncheck false detections. Changes apply to the entire track before the video is encoded.</source>
-        <translation>浏览时间线并取消勾选错误检测。更改将在视频编码前应用到整个轨迹。</translation>
+        <source>Scrub the timeline and uncheck false detections. To cover a missed region, draw a manual track and add keyframes as it moves; the boxes between keyframes are interpolated before encoding.</source>
+        <translation>浏览时间线并取消勾选误检项。要遮盖漏检区域，请绘制手动轨迹并随其移动添加关键帧；关键帧之间的框会在编码前自动插值。</translation>
     </message>
     <message>
         <source>Track %1  ·  %2–%3</source>
         <translation>轨迹 %1  ·  %2–%3</translation>
+    </message>
+    <message>
+        <source>Add missed track</source>
+        <translation>添加漏检轨迹</translation>
+    </message>
+    <message>
+        <source>Add / update keyframe</source>
+        <translation>添加 / 更新关键帧</translation>
+    </message>
+    <message>
+        <source>Set start here</source>
+        <translation>将此处设为起点</translation>
+    </message>
+    <message>
+        <source>Set end here</source>
+        <translation>将此处设为终点</translation>
+    </message>
+    <message>
+        <source>Remove manual track</source>
+        <translation>删除手动轨迹</translation>
     </message>
     <message>
         <source>Include all</source>
@@ -1361,8 +1389,20 @@ Continue?</source>
         <translation>%1 / %2</translation>
     </message>
     <message>
-        <source>%1 of %2 tracks included</source>
-        <translation>已包括 %1 / %2 条轨迹</translation>
+        <source>Drag a box around the missed region on the current frame.</source>
+        <translation>请在当前帧拖出一个框，圈住漏检区域。</translation>
+    </message>
+    <message>
+        <source>Drag the new box for manual track %1 on this frame.</source>
+        <translation>请在此帧为手动轨迹 %1 拖出新框。</translation>
+    </message>
+    <message numerus="yes">
+        <source>Manual %1  ·  %2–%3  ·  %n keyframe(s)</source>
+        <translation><numerusform>手动 %1  ·  %2–%3  ·  %n 个关键帧</numerusform></translation>
+    </message>
+    <message>
+        <source>%1 of %2 automatic tracks included · %3 manual</source>
+        <translation>已包含 %2 条自动轨迹中的 %1 条 · %3 条手动轨迹</translation>
     </message>
 </context>
 <context>

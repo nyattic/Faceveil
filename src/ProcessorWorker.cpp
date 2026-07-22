@@ -1224,6 +1224,55 @@ namespace cloakframe
                 {
                     return reviewResult.excludedTrackIds.contains(track.id);
                 });
+
+                constexpr qsizetype kMaxManualTracks = 64;
+                constexpr qsizetype kMaxManualKeyframes = 4096;
+                constexpr std::uint64_t kMaxReviewedTrackBoxes = 8'000'000;
+                if (reviewResult.addedTracks.size() > kMaxManualTracks)
+                {
+                    cancelled_.store(true, std::memory_order_release);
+                    return false;
+                }
+                int nextTrackId = 1;
+                std::uint64_t reviewedTrackBoxes = 0;
+                for (const auto &track: tracks)
+                {
+                    if (track.id < std::numeric_limits<int>::max())
+                    {
+                        nextTrackId = std::max(nextTrackId, track.id + 1);
+                    }
+                    if (track.boxes.size() > kMaxReviewedTrackBoxes - reviewedTrackBoxes)
+                    {
+                        cancelled_.store(true, std::memory_order_release);
+                        return false;
+                    }
+                    reviewedTrackBoxes += track.boxes.size();
+                }
+                for (const auto &manual: reviewResult.addedTracks)
+                {
+                    const std::uint64_t manualBoxCount = manual.endFrame >= manual.startFrame
+                        ? static_cast<std::uint64_t>(
+                              static_cast<std::int64_t>(manual.endFrame) -
+                              static_cast<std::int64_t>(manual.startFrame)) + 1
+                        : 0;
+                    if (manual.keyframes.size() > kMaxManualKeyframes ||
+                        manualBoxCount == 0 ||
+                        manualBoxCount > kMaxReviewedTrackBoxes - reviewedTrackBoxes ||
+                        nextTrackId == std::numeric_limits<int>::max())
+                    {
+                        cancelled_.store(true, std::memory_order_release);
+                        return false;
+                    }
+                    auto track = materializeManualVideoTrack(
+                        manual, request.frameCount, request.frameSize, nextTrackId++);
+                    if (!track)
+                    {
+                        cancelled_.store(true, std::memory_order_release);
+                        return false;
+                    }
+                    tracks.push_back(std::move(*track));
+                    reviewedTrackBoxes += manualBoxCount;
+                }
                 return true;
             };
         }
